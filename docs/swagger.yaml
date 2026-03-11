@@ -1,0 +1,2175 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: internal server error
+        type: string
+    type: object
+  handlers.MessageResponse:
+    properties:
+      message:
+        example: operation successful
+        type: string
+    type: object
+  handlers.PresignedURLResponse:
+    properties:
+      message:
+        example: presigned url generated successfully
+        type: string
+      url:
+        example: https://s3.amazonaws.com/bucket/profile/admins/uuid.png?X-Amz-Signature=...
+        type: string
+    type: object
+  handlers.TokenResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handlers.activateRFQRequest:
+    properties:
+      is_rfq_active:
+        example: true
+        type: boolean
+    type: object
+  handlers.blockUserRequest:
+    properties:
+      is_user_blocked:
+        example: true
+        type: boolean
+    type: object
+  handlers.businessApplicationRequest:
+    properties:
+      id:
+        example: biz-uuid-001
+        type: string
+      reject_reason:
+        example: Documents incomplete
+        type: string
+      status:
+        example: APPLIED
+        type: string
+    type: object
+  handlers.businessRequest:
+    properties:
+      address:
+        example: 123 Market Street
+        type: string
+      business_type:
+        example: TRADER
+        type: string
+      city:
+        example: Pune
+        type: string
+      email:
+        example: business@example.com
+        type: string
+      name:
+        example: Agro Traders Pvt Ltd
+        type: string
+      phone:
+        example: "9876543210"
+        type: string
+      pincode:
+        example: "411001"
+        type: string
+      state:
+        example: Maharashtra
+        type: string
+      user_id:
+        example: user-uuid-001
+        type: string
+    type: object
+  handlers.categoryRequest:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: All types of grains and cereals
+        type: string
+      id:
+        example: cat-uuid-001
+        type: string
+      name:
+        example: Grains
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handlers.followerRequest:
+    properties:
+      business_id:
+        example: biz-uuid-001
+        type: string
+      created_at:
+        type: string
+      user_id:
+        example: user-uuid-001
+        type: string
+    type: object
+  handlers.getTokenByEmailPasswordRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: StrongPass@1
+        type: string
+    type: object
+  handlers.legalRequest:
+    properties:
+      aadhaar:
+        example: 1234-5678-9012
+        type: string
+      export_import:
+        example: IEC123456
+        type: string
+      fassi:
+        example: FASSI123456
+        type: string
+      gst:
+        example: 29ABCDE1234F1Z5
+        type: string
+      id:
+        example: biz-uuid-001
+        type: string
+      msme:
+        example: MSME123456
+        type: string
+      pan:
+        example: ABCDE1234F
+        type: string
+    type: object
+  handlers.productImageRequest:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      image:
+        type: string
+      index:
+        type: integer
+      product_id:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  handlers.registerUserRequest:
+    description: Registration request body
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      first_name:
+        example: John
+        type: string
+      last_name:
+        example: Doe
+        type: string
+      password:
+        example: StrongPass@1
+        type: string
+      phone:
+        example: "9876543210"
+        type: string
+    type: object
+  handlers.rfqRequest:
+    properties:
+      business_id:
+        example: biz-uuid-001
+        type: string
+      category_id:
+        example: cat-uuid-001
+        type: string
+      created_at:
+        type: string
+      id:
+        example: rfq-uuid-001
+        type: string
+      is_rfq_active:
+        example: true
+        type: boolean
+      price:
+        example: 1200.5
+        type: number
+      product_name:
+        example: Wheat
+        type: string
+      quantity:
+        example: 500
+        type: number
+      sub_category_id:
+        example: subcat-uuid-001
+        type: string
+      unit:
+        example: kg
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handlers.socialRequest:
+    properties:
+      facebook:
+        example: https://facebook.com/agro
+        type: string
+      id:
+        example: biz-uuid-001
+        type: string
+      instagram:
+        example: https://instagram.com/agro
+        type: string
+      linkedin:
+        example: https://linkedin.com/company/agro
+        type: string
+      telegram:
+        example: https://t.me/agro
+        type: string
+      website:
+        example: https://agromart.com
+        type: string
+      x:
+        example: https://x.com/agro
+        type: string
+      youtube:
+        example: https://youtube.com/agro
+        type: string
+    type: object
+  handlers.subCategoryRequest:
+    properties:
+      category_id:
+        example: cat-uuid-001
+        type: string
+      created_at:
+        type: string
+      description:
+        example: All varieties of wheat
+        type: string
+      id:
+        example: subcat-uuid-001
+        type: string
+      name:
+        example: Wheat
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handlers.updatePasswordRequest:
+    properties:
+      password:
+        example: NewPass@123
+        type: string
+    type: object
+  handlers.updateUserProfileDetailsRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      first_name:
+        example: John
+        type: string
+      last_name:
+        example: Doe
+        type: string
+      phone:
+        example: "9876543210"
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Agromart backend server
+  title: Agromart API
+  version: "1.0"
+paths:
+  /admin/create:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new admin account
+      parameters:
+      - description: Admin registration payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.registerUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: admin created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new admin
+      tags:
+      - admins
+  /admin/delete/{id}:
+    delete:
+      description: Deletes the admin with the given ID
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete admin
+      tags:
+      - admins
+  /admin/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates an admin using email and password, returns a JWT
+        token
+      parameters:
+      - description: Admin login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.getTokenByEmailPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Invalid payload or incorrect password
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Admin login
+      tags:
+      - auth
+  /admin/update/details/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the profile details of the admin with the given ID
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Admin update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateUserProfileDetailsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update admin profile details
+      tags:
+      - admins
+  /admin/update/image/{id}:
+    put:
+      description: Returns an S3 presigned URL to upload a profile image for the given
+        admin
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresignedURLResponse'
+        "400":
+          description: Invalid URL Param
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Generates presigned URL for admin profile image upload and updates
+        the image path in database
+      tags:
+      - Image Upload
+  /admin/update/password/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the password of the admin with the given ID
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New password payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update admin password
+      tags:
+      - admins
+  /business/application/accept/{id}:
+    put:
+      description: Marks the business application for the given ID as accepted
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Accept a business application
+      tags:
+      - businesses
+  /business/application/create:
+    post:
+      consumes:
+      - application/json
+      description: Submits an application for business approval with status set to
+        APPLIED
+      parameters:
+      - description: Business application payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.businessApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid payload or missing business ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Submit a business application
+      tags:
+      - businesses
+  /business/application/get/{id}:
+    get:
+      description: Returns the application status and details for the business with
+        the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: application details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get business application details
+      tags:
+      - businesses
+  /business/application/reject/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Marks the business application for the given ID as rejected with
+        a reason
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rejection reason payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.businessApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID, payload, or missing reject reason
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Reject a business application
+      tags:
+      - businesses
+  /business/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new business profile for a user
+      parameters:
+      - description: Business creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.businessRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: business created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a business
+      tags:
+      - businesses
+  /business/delete/{id}:
+    delete:
+      description: Deletes the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Business not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a business
+      tags:
+      - businesses
+  /business/get/{id}:
+    get:
+      description: Returns the basic profile of the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: business details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get business details
+      tags:
+      - businesses
+  /business/get/all:
+    get:
+      description: Returns a list of all registered businesses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of businesses
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: No businesses found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all businesses
+      tags:
+      - businesses
+  /business/get/complete/{id}:
+    get:
+      description: Returns full business profile including social, legal, and application
+        details
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: complete business details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get complete business details
+      tags:
+      - businesses
+  /business/get/user/{id}:
+    get:
+      description: Returns the business ID associated with the given user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: business id
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: No business found for this user
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get business ID by user ID
+      tags:
+      - businesses
+  /business/legal/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates legal document records for the given business
+      parameters:
+      - description: Legal documents payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.legalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid payload or missing business ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Add business legal documents
+      tags:
+      - businesses
+  /business/legal/get/{id}:
+    get:
+      description: Returns the legal documents for the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: legal details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get business legal details
+      tags:
+      - businesses
+  /business/legal/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the legal document records for the business with the given
+        ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Legal documents update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.legalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update business legal documents
+      tags:
+      - businesses
+  /business/social/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates social media links for the given business
+      parameters:
+      - description: Social links payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.socialRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid payload or missing business ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Add business social links
+      tags:
+      - businesses
+  /business/social/get/{id}:
+    get:
+      description: Returns the social media links for the business with the given
+        ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: social details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get business social details
+      tags:
+      - businesses
+  /business/social/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the social media links for the business with the given
+        ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Social links update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.socialRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update business social links
+      tags:
+      - businesses
+  /business/status/{id}:
+    get:
+      description: Returns whether the business with the given ID has been approved
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: approval status
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Check if business is approved
+      tags:
+      - businesses
+  /business/status/block/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Sets the blocked status of the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update business blocked status
+      tags:
+      - businesses
+  /business/status/trust/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Sets the trusted status of the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update business trusted status
+      tags:
+      - businesses
+  /business/status/verify/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Sets the verified status of the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update business verified status
+      tags:
+      - businesses
+  /business/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the profile details of the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Business update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.businessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update business details
+      tags:
+      - businesses
+  /business/update/image/{id}:
+    put:
+      description: Returns an S3 presigned URL to upload a profile image for the given
+        business
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresignedURLResponse'
+        "400":
+          description: Invalid URL Param
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Generate presigned URL for business profile image upload and updates
+        the image path in database
+      tags:
+      - Image Upload
+  /category/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new product category
+      parameters:
+      - description: Category creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.categoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: category created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a category
+      tags:
+      - categories
+  /category/delete/{id}:
+    delete:
+      description: Deletes the category with the given ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid or missing ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a category
+      tags:
+      - categories
+  /category/get/{id}:
+    get:
+      description: Returns the category with the given ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: category details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get category by ID
+      tags:
+      - categories
+  /category/get/all:
+    get:
+      description: Returns a list of all product categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of categories
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all categories
+      tags:
+      - categories
+  /category/sub/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new sub-category under an existing category
+      parameters:
+      - description: Sub-category creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.subCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: sub category created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a sub-category
+      tags:
+      - categories
+  /category/sub/delete/{id}:
+    delete:
+      description: Deletes the sub-category with the given ID
+      parameters:
+      - description: Sub-category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid or missing ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a sub-category
+      tags:
+      - categories
+  /category/sub/get/{id}:
+    get:
+      description: Returns the sub-category with the given ID
+      parameters:
+      - description: Sub-category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: sub-category details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get sub-category by ID
+      tags:
+      - categories
+  /category/sub/get/all:
+    get:
+      description: Returns a list of all sub-categories across all categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of sub-categories
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all sub-categories
+      tags:
+      - categories
+  /category/sub/get/category/{id}:
+    get:
+      description: Returns all sub-categories belonging to the given category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of sub-categories
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing category ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get sub-categories by category ID
+      tags:
+      - categories
+  /category/sub/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the name and description of the sub-category with the given
+        ID
+      parameters:
+      - description: Sub-category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Sub-category update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.subCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a sub-category
+      tags:
+      - categories
+  /category/sub/update/image/{id}:
+    put:
+      description: Returns an S3 presigned URL to upload an image for the given sub-category
+      parameters:
+      - description: Sub-category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresignedURLResponse'
+        "400":
+          description: Invalid URL Param
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Generate presigned URL for sub-category image upload and updates the
+        image path in database
+      tags:
+      - Image Upload
+  /category/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the name and description of the category with the given
+        ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Category update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.categoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a category
+      tags:
+      - categories
+  /category/update/image/{id}:
+    put:
+      description: Returns an S3 presigned URL to upload an image for the given category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresignedURLResponse'
+        "400":
+          description: Invalid URL Param
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Generate presigned URL for category image upload and updates the image
+        path in database
+      tags:
+      - Image Upload
+  /follower/follow:
+    post:
+      consumes:
+      - application/json
+      description: Creates a follower relationship between a user and a business
+      parameters:
+      - description: Follow payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.followerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Follow a business
+      tags:
+      - followers
+  /follower/get/followers/{id}:
+    get:
+      description: Returns a list of all users following the given business
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of followers
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing business ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all followers
+      tags:
+      - followers
+  /follower/get/followers/count/{id}:
+    get:
+      description: Returns the total number of followers for a given business
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: followers count
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing business ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get followers count
+      tags:
+      - followers
+  /follower/get/following/count/{id}:
+    get:
+      description: Returns the total number of businesses a user is following
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: following count
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing user ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get following count
+      tags:
+      - followers
+  /follower/get/followings/{id}:
+    get:
+      description: Returns a list of all businesses a user is following
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of followings
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid or missing user ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all followings
+      tags:
+      - followers
+  /follower/unfollow:
+    post:
+      consumes:
+      - application/json
+      description: Removes the follower relationship between a user and a business
+      parameters:
+      - description: Unfollow payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.followerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Unfollow a business
+      tags:
+      - followers
+  /product/delete/image:
+    delete:
+      consumes:
+      - application/json
+      description: Returns success message after successfully deleting image from
+        both S3 and database
+      parameters:
+      - description: Update Product Image Payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.productImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: product image deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete's the Product Image from S3 and image path from database
+      tags:
+      - Image Upload
+  /product/update/image:
+    put:
+      consumes:
+      - application/json
+      description: Returns an S3 presigned URL to upload an image for the given product
+      parameters:
+      - description: Update Product Image Payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.productImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresignedURLResponse'
+        "400":
+          description: Invalid payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Generate presigned URL for product image upload and updates the image
+        path in database
+      tags:
+      - Image Upload
+  /rfq/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new Request for Quotation for a business
+      parameters:
+      - description: RFQ creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.rfqRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid payload or missing required fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new RFQ
+      tags:
+      - rfq
+  /rfq/delete/{id}:
+    delete:
+      description: Deletes the RFQ with the given ID
+      parameters:
+      - description: RFQ ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete an RFQ
+      tags:
+      - rfq
+  /rfq/get/{id}:
+    get:
+      description: Returns all RFQs belonging to the business with the given ID
+      parameters:
+      - description: Business ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of rfqs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get RFQs by business ID
+      tags:
+      - rfq
+  /rfq/get/all:
+    get:
+      description: Returns a list of all RFQs across all businesses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of rfqs
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all RFQs
+      tags:
+      - rfq
+  /rfq/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the details of an existing RFQ by its ID
+      parameters:
+      - description: RFQ ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: RFQ update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.rfqRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update an RFQ
+      tags:
+      - rfq
+  /rfq/update/status/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Toggles the active status of an RFQ by its ID
+      parameters:
+      - description: RFQ ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: RFQ active status payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.activateRFQRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Activate or deactivate an RFQ
+      tags:
+      - rfq
+  /user/block/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the block status of the user with the given ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Block status payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.blockUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Block or unblock a user
+      tags:
+      - users
+  /user/create:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user account
+      parameters:
+      - description: User registration payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.registerUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: user created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new user
+      tags:
+      - users
+  /user/delete/{id}:
+    delete:
+      description: Deletes the user with the given ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete user
+      tags:
+      - users
+  /user/get/all:
+    get:
+      description: Returns a list of all registered users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of users
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all users
+      tags:
+      - users
+  /user/get/user/{id}:
+    get:
+      description: Returns the details of the user with the given ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get user details by ID
+      tags:
+      - users
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user using email and password, returns a JWT token
+        along with business context
+      parameters:
+      - description: User login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.getTokenByEmailPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Invalid payload or incorrect password
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: User login
+      tags:
+      - auth
+  /user/update/details/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the profile details of the user with the given ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateUserProfileDetailsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update user profile details
+      tags:
+      - users
+  /user/update/image/{id}:
+    put:
+      description: Returns an S3 presigned URL to upload a profile image for the given
+        user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PresignedURLResponse'
+        "400":
+          description: Invalid URL Param
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Generate presigned URL for user profile image upload and updates the
+        image path in database
+      tags:
+      - Image Upload
+  /user/update/password/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the password of the user with the given ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New password payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update user password
+      tags:
+      - users
+swagger: "2.0"
