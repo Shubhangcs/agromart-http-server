@@ -48,7 +48,7 @@ func ValidateToken(tokenString string) (*Token, error) {
 		tokenString,
 		&Token{},
 		func(t *jwt.Token) (any, error) {
-			return jwtSecretKey, nil
+			return []byte(jwtSecretKey), nil
 		},
 	)
 
