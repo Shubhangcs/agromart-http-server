@@ -6,23 +6,27 @@ import (
 )
 
 type RFQ struct {
-	ID            string    `json:"id"`
-	BusinessID    string    `json:"business_id"`
-	BusinessName  string    `json:"business_name"`
-	BusinessPhone string    `json:"business_phone"`
-	BusinessEmail string    `json:"business_email"`
-	Address       string    `json:"address"`
-	City          string    `json:"city"`
-	State         string    `json:"state"`
-	CategoryID    string    `json:"category_id"`
-	SubCategoryID string    `json:"sub_category_id"`
-	ProductName   string    `json:"product_name"`
-	Quantity      float64   `json:"quantity"`
-	Unit          string    `json:"unit"`
-	Price         float64   `json:"price"`
-	IsRFQActive   bool      `json:"is_rfq_active"`
-	CreatedAT     time.Time `json:"created_at"`
-	UpdatedAT     time.Time `json:"updated_at"`
+	ID                     string    `json:"id"`
+	BusinessID             string    `json:"business_id"`
+	BusinessName           string    `json:"business_name"`
+	BusinessPhone          string    `json:"business_phone"`
+	BusinessEmail          string    `json:"business_email"`
+	Address                string    `json:"address"`
+	City                   string    `json:"city"`
+	State                  string    `json:"state"`
+	CategoryID             string    `json:"category_id,omitempty"`
+	SubCategoryID          string    `json:"sub_category_id,omitempty"`
+	CategoryName           string    `json:"category_name,omitempty"`
+	SubCategoryName        string    `json:"sub_category_name,omitempty"`
+	CategoryDescription    string    `json:"category_description,omitempty"`
+	SubCategoryDescription string    `json:"sub_category_description,omitempty"`
+	ProductName            string    `json:"product_name"`
+	Quantity               float64   `json:"quantity"`
+	Unit                   string    `json:"unit"`
+	Price                  float64   `json:"price"`
+	IsRFQActive            bool      `json:"is_rfq_active"`
+	CreatedAT              time.Time `json:"created_at"`
+	UpdatedAT              time.Time `json:"updated_at"`
 }
 
 type PostgresRFQStore struct {
@@ -187,6 +191,12 @@ func (rs *PostgresRFQStore) GetAllRFQ() ([]RFQ, error) {
 		b.address,
 		b.city,
 		b.state,
+		c.id,
+		c.name,
+		c.description,
+		sc.id,
+		sc.name,
+		sc.description,
 		r.product_name,
 		r.quantity,
 		r.unit,
@@ -197,6 +207,10 @@ func (rs *PostgresRFQStore) GetAllRFQ() ([]RFQ, error) {
 	FROM rfqs r
 	JOIN businesses b
 		ON b.id = r.business_id
+	JOIN categories c
+		ON c.id = r.category_id
+	JOIN sub_categories sc
+		ON sc.id = r.sub_category_id
 	WHERE r.is_rfq_active = TRUE;
 	`
 
@@ -218,6 +232,12 @@ func (rs *PostgresRFQStore) GetAllRFQ() ([]RFQ, error) {
 			&r.Address,
 			&r.City,
 			&r.State,
+			&r.CategoryID,
+			&r.CategoryName,
+			&r.CategoryDescription,
+			&r.SubCategoryID,
+			&r.SubCategoryName,
+			&r.SubCategoryDescription,
 			&r.ProductName,
 			&r.Quantity,
 			&r.Unit,
