@@ -87,6 +87,7 @@ type UserStore interface {
 	GetAllUsers() ([]User, error)
 	BlockUser(*User) error
 	GetUserDetailsByID(id string) (*User, error)
+	GetAdminDetailsByID(id string) (*Admin, error)
 }
 
 func (us *PostgresUserStore) CreateAdmin(admin *Admin) error {
@@ -443,11 +444,51 @@ func (us *PostgresUserStore) GetUserDetailsByID(id string) (*User, error) {
 		email,
 		phone,
 		created_at,
-		updated_at
+		updated_at,
+		is_user_blocked,
+		is_user_seller
 	FROM users
 	WHERE id = $1;
 	`
 	var user User
+	err := us.db.QueryRow(
+		query,
+		id,
+	).Scan(
+		&user.ID,
+		&user.ProfileImage,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.Phone,
+		&user.CreatedAT,
+		&user.UpdatedAT,
+		&user.IsUserBlocked,
+		&user.IsUserSeller,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (us *PostgresUserStore) GetAdminDetailsByID(id string) (*Admin, error) {
+	query := `
+	SELECT 
+		id,
+		profile_image,
+		first_name,
+		last_name,
+		email,
+		phone,
+		created_at,
+		updated_at
+	FROM admins
+	WHERE id = $1;
+	`
+	var user Admin
 	err := us.db.QueryRow(
 		query,
 		id,

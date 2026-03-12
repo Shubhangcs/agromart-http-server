@@ -517,3 +517,19 @@ func (uh *UserHandler) HandleGetUserDetailsByID(w http.ResponseWriter, r *http.R
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "user details fetched successfully", "user": res})
 }
+
+func (uh *UserHandler) HandleGetAdminDetailsByID(w http.ResponseWriter, r *http.Request) {
+	adminId, err := utils.ReadParamID(r)
+	if err != nil {
+		uh.logger.Printf("ERROR: get admin details by id: %v\n", err)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		return
+	}
+	res, err := uh.userStore.GetAdminDetailsByID(adminId)
+	if err != nil {
+		uh.logger.Printf("ERROR: get admin details by id: %v\n", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "admin details fetched successfully", "user": res})
+}

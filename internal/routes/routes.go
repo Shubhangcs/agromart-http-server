@@ -31,6 +31,7 @@ func usersRoutes(app *app.Application, r *chi.Mux) {
 
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
+		r.Get("/get/admin/{id}", app.UserHandler.HandleGetAdminDetailsByID)
 		r.Put("/update/image/{id}", app.BlobHandler.HandleUpdateAdminProfileImage)
 		r.Put("/update/details/{id}", app.UserHandler.HandleUpdateAdminDetails)
 		r.Put("/update/password/{id}", app.UserHandler.HandleUpdateAdminPassword)
