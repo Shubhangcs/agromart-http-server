@@ -4,56 +4,26 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // ProductHandler handles all product-related HTTP requests.
 type ProductHandler struct {
 	productStore store.ProductStore
-	logger       *log.Logger
+	logger       *slog.Logger
 }
 
-func NewProductHandler(productStore store.ProductStore, logger *log.Logger) *ProductHandler {
+func NewProductHandler(productStore store.ProductStore, logger *slog.Logger) *ProductHandler {
 	return &ProductHandler{
 		productStore: productStore,
 		logger:       logger,
 	}
-}
-
-func (ph *ProductHandler) validateCreateProductRequest(req *models.CreateProductRequest) error {
-	if req.BusinessID == "" {
-		return errors.New("business_id is required")
-	}
-	if req.CategoryID == "" {
-		return errors.New("category_id is required")
-	}
-	if req.SubCategoryID == "" {
-		return errors.New("sub_category_id is required")
-	}
-	if req.Name == "" {
-		return errors.New("product name is required")
-	}
-	if req.Description == "" {
-		return errors.New("description is required")
-	}
-	if req.Quantity <= 0 {
-		return errors.New("quantity must be greater than zero")
-	}
-	if req.Unit == "" {
-		return errors.New("unit is required")
-	}
-	if req.Price <= 0 {
-		return errors.New("price must be greater than zero")
-	}
-	if req.MOQ == "" {
-		return errors.New("moq is required")
-	}
-	return nil
 }
 
 // HandleCreateProduct godoc
@@ -71,11 +41,11 @@ func (ph *ProductHandler) validateCreateProductRequest(req *models.CreateProduct
 func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ph.logger.Printf("ERROR: create product: %v\n", err)
+		ph.logger.Error("create product", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := ph.validateCreateProductRequest(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -92,7 +62,7 @@ func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Req
 		IsProductActive: req.IsProductActive,
 	}
 	if err := ph.productStore.CreateProduct(product); err != nil {
-		ph.logger.Printf("ERROR: create product: %v\n", err)
+		ph.logger.Error("create product", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -121,8 +91,12 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 	}
 	var req models.UpdateProductRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ph.logger.Printf("ERROR: update product: %v\n", err)
+		ph.logger.Error("update product", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err = validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if err = ph.productStore.UpdateProduct(&models.Product{
@@ -140,7 +114,7 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		ph.logger.Printf("ERROR: update product: %v\n", err)
+		ph.logger.Error("update product", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -170,7 +144,7 @@ func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Req
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		ph.logger.Printf("ERROR: delete product: %v\n", err)
+		ph.logger.Error("delete product", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -196,7 +170,7 @@ func (ph *ProductHandler) HandleGetAllProducts(w http.ResponseWriter, r *http.Re
 	filter := utils.ReadProductFilter(r)
 	res, err := ph.productStore.GetAllProducts(filter, pg.Limit, pg.Offset())
 	if err != nil {
-		ph.logger.Printf("ERROR: get all products: %v\n", err)
+		ph.logger.Error("get all products", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -229,7 +203,7 @@ func (ph *ProductHandler) HandleGetBusinessProducts(w http.ResponseWriter, r *ht
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetBusinessProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		ph.logger.Printf("ERROR: get business products: %v\n", err)
+		ph.logger.Error("get business products", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -262,7 +236,7 @@ func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, 
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetCategoryBasedProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		ph.logger.Printf("ERROR: get category based products: %v\n", err)
+		ph.logger.Error("get category based products", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -295,7 +269,7 @@ func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWrite
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetSubCategoryBasedProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		ph.logger.Printf("ERROR: get sub category based products: %v\n", err)
+		ph.logger.Error("get sub category based products", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -328,7 +302,7 @@ func (ph *ProductHandler) HandleGetFollowersProducts(w http.ResponseWriter, r *h
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetFollowersProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		ph.logger.Printf("ERROR: get followers products: %v\n", err)
+		ph.logger.Error("get followers products", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -363,7 +337,7 @@ func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		ph.logger.Printf("ERROR: get product details by id: %v\n", err)
+		ph.logger.Error("get product details by id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -403,7 +377,7 @@ func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWrite
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		ph.logger.Printf("ERROR: change product active status: %v\n", err)
+		ph.logger.Error("change product active status", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

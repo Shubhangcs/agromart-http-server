@@ -2,58 +2,36 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // FollowerHandler handles all follower/following HTTP requests.
 type FollowerHandler struct {
 	followerStore store.FollowerStore
-	logger        *log.Logger
+	logger        *slog.Logger
 }
 
-func NewFollowerHandler(followerStore store.FollowerStore, logger *log.Logger) *FollowerHandler {
+func NewFollowerHandler(followerStore store.FollowerStore, logger *slog.Logger) *FollowerHandler {
 	return &FollowerHandler{
 		followerStore: followerStore,
 		logger:        logger,
 	}
 }
 
-func (fh *FollowerHandler) validateFollowRequest(req *models.FollowRequest) error {
-	if req.UserID == "" {
-		return errors.New("user_id is required")
-	}
-	if req.BusinessID == "" {
-		return errors.New("business_id is required")
-	}
-	return nil
-}
-
-// HandleCreateFollower godoc
-// @Summary      Follow a business
-// @Description  Creates a follower relationship between a user and a business (idempotent)
-// @Tags         followers
-// @Accept       json
-// @Produce      json
-// @Param        body body models.FollowRequest true "Follow payload"
-// @Success      201 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
-// @Security     BearerAuth
-// @Router       /follower/follow [post]
 func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.Request) {
 	var req models.FollowRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fh.logger.Printf("ERROR: create follower: %v\n", err)
+		fh.logger.Error("create follower", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := fh.validateFollowRequest(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -61,7 +39,7 @@ func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.R
 		UserID:     req.UserID,
 		BusinessID: req.BusinessID,
 	}); err != nil {
-		fh.logger.Printf("ERROR: create follower: %v\n", err)
+		fh.logger.Error("create follower", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -83,11 +61,11 @@ func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.R
 func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.Request) {
 	var req models.FollowRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fh.logger.Printf("ERROR: remove follower: %v\n", err)
+		fh.logger.Error("remove follower", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := fh.validateFollowRequest(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -95,7 +73,7 @@ func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.R
 		UserID:     req.UserID,
 		BusinessID: req.BusinessID,
 	}); err != nil {
-		fh.logger.Printf("ERROR: remove follower: %v\n", err)
+		fh.logger.Error("remove follower", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -121,7 +99,7 @@ func (fh *FollowerHandler) HandleGetFollowersCount(w http.ResponseWriter, r *htt
 	}
 	count, err := fh.followerStore.GetFollowersCount(id)
 	if err != nil {
-		fh.logger.Printf("ERROR: get followers count: %v\n", err)
+		fh.logger.Error("get followers count", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -147,7 +125,7 @@ func (fh *FollowerHandler) HandleGetFollowingCount(w http.ResponseWriter, r *htt
 	}
 	count, err := fh.followerStore.GetFollowingCount(id)
 	if err != nil {
-		fh.logger.Printf("ERROR: get following count: %v\n", err)
+		fh.logger.Error("get following count", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -176,7 +154,7 @@ func (fh *FollowerHandler) HandleGetAllFollowers(w http.ResponseWriter, r *http.
 	pg := utils.ReadPaginationParams(r)
 	res, err := fh.followerStore.GetAllFollowers(id, pg.Limit, pg.Offset())
 	if err != nil {
-		fh.logger.Printf("ERROR: get all followers: %v\n", err)
+		fh.logger.Error("get all followers", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -209,7 +187,7 @@ func (fh *FollowerHandler) HandleGetAllFollowing(w http.ResponseWriter, r *http.
 	pg := utils.ReadPaginationParams(r)
 	res, err := fh.followerStore.GetAllFollowing(id, pg.Limit, pg.Offset())
 	if err != nil {
-		fh.logger.Printf("ERROR: get all following: %v\n", err)
+		fh.logger.Error("get all following", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

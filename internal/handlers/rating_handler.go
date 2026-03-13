@@ -4,21 +4,22 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // ProductRatingHandler handles product rating HTTP requests.
 type ProductRatingHandler struct {
 	ratingStore store.ProductRatingStore
-	logger      *log.Logger
+	logger      *slog.Logger
 }
 
-func NewProductRatingHandler(ratingStore store.ProductRatingStore, logger *log.Logger) *ProductRatingHandler {
+func NewProductRatingHandler(ratingStore store.ProductRatingStore, logger *slog.Logger) *ProductRatingHandler {
 	return &ProductRatingHandler{
 		ratingStore: ratingStore,
 		logger:      logger,
@@ -40,20 +41,12 @@ func NewProductRatingHandler(ratingStore store.ProductRatingStore, logger *log.L
 func (h *ProductRatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.RateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Printf("ERROR: rate product: %v\n", err)
+		h.logger.Error("rate product", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if req.ProductID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "product_id is required"})
-		return
-	}
-	if req.UserID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "user_id is required"})
-		return
-	}
-	if req.Rating < 0.5 || req.Rating > 5.0 {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "rating must be between 0.5 and 5.0"})
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	rating := &models.ProductRating{
@@ -62,7 +55,7 @@ func (h *ProductRatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.
 		Rating:    req.Rating,
 	}
 	if err := h.ratingStore.RateProduct(rating); err != nil {
-		h.logger.Printf("ERROR: rate product: %v\n", err)
+		h.logger.Error("rate product", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -91,7 +84,7 @@ func (h *ProductRatingHandler) HandleGetAverageProductRating(w http.ResponseWrit
 	}
 	avg, err := h.ratingStore.GetAverageProductRating(id)
 	if err != nil {
-		h.logger.Printf("ERROR: get average product rating: %v\n", err)
+		h.logger.Error("get average product rating", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -123,7 +116,7 @@ func (h *ProductRatingHandler) HandleGetProductRatings(w http.ResponseWriter, r 
 	pg := utils.ReadPaginationParams(r)
 	res, err := h.ratingStore.GetRatingsByProductID(id, pg.Limit, pg.Offset())
 	if err != nil {
-		h.logger.Printf("ERROR: get product ratings: %v\n", err)
+		h.logger.Error("get product ratings", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -157,7 +150,7 @@ func (h *ProductRatingHandler) HandleDeleteProductRating(w http.ResponseWriter, 
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rating not found"})
 			return
 		}
-		h.logger.Printf("ERROR: delete product rating: %v\n", err)
+		h.logger.Error("delete product rating", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

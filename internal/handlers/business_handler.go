@@ -4,91 +4,36 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // BusinessHandler handles all business-related HTTP requests.
 type BusinessHandler struct {
 	businessStore store.BusinessStore
-	logger        *log.Logger
+	logger        *slog.Logger
 }
 
-func NewBusinessHandler(businessStore store.BusinessStore, logger *log.Logger) *BusinessHandler {
+func NewBusinessHandler(businessStore store.BusinessStore, logger *slog.Logger) *BusinessHandler {
 	return &BusinessHandler{
 		businessStore: businessStore,
 		logger:        logger,
 	}
 }
 
-func (bh *BusinessHandler) validateCreateBusinessRequest(req *models.CreateBusinessRequest) error {
-	if req.UserID == "" {
-		return errors.New("user_id is required")
-	}
-	if req.Name == "" {
-		return errors.New("name is required")
-	}
-	if !emailRegx.MatchString(req.Email) {
-		return errors.New("valid email is required")
-	}
-	if !phoneRegx.MatchString(req.Phone) {
-		return errors.New("valid phone number is required")
-	}
-	if req.Address == "" {
-		return errors.New("address is required")
-	}
-	if req.City == "" {
-		return errors.New("city is required")
-	}
-	if req.State == "" {
-		return errors.New("state is required")
-	}
-	if req.Pincode == "" {
-		return errors.New("pincode is required")
-	}
-	if req.BusinessType == "" {
-		return errors.New("business_type is required")
-	}
-	return nil
-}
-
-func (bh *BusinessHandler) validateRateBusinessRequest(req *models.RateBusinessRequest) error {
-	if req.BusinessID == "" {
-		return errors.New("business_id is required")
-	}
-	if req.UserID == "" {
-		return errors.New("user_id is required")
-	}
-	if req.Rating <= 0 || req.Rating > 5 {
-		return errors.New("rating must be between 0.1 and 5")
-	}
-	return nil
-}
-
-// HandleCreateBusiness godoc
-// @Summary      Create a business
-// @Description  Creates a new business profile for a user
-// @Tags         businesses
-// @Accept       json
-// @Produce      json
-// @Param        body body models.CreateBusinessRequest true "Business creation payload"
-// @Success      201 {object} map[string]interface{} "business_id returned"
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
-// @Security     BearerAuth
-// @Router       /business/create [post]
 func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBusinessRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: create business: %v\n", err)
+		bh.logger.Error("create business", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := bh.validateCreateBusinessRequest(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -104,7 +49,7 @@ func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.R
 		BusinessType: req.BusinessType,
 	}
 	if err := bh.businessStore.CreateBusiness(business); err != nil {
-		bh.logger.Printf("ERROR: create business: %v\n", err)
+		bh.logger.Error("create business", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -126,12 +71,12 @@ func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.R
 func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSocialRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: create social: %v\n", err)
+		bh.logger.Error("create social", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if req.ID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "business id is required"})
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	social := &models.Social{
@@ -145,7 +90,7 @@ func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Req
 		Website:   req.Website,
 	}
 	if err := bh.businessStore.CreateSocial(social); err != nil {
-		bh.logger.Printf("ERROR: create social: %v\n", err)
+		bh.logger.Error("create social", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -167,12 +112,12 @@ func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Req
 func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateLegalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: create legal: %v\n", err)
+		bh.logger.Error("create legal", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if req.ID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "business id is required"})
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	legal := &models.Legal{
@@ -185,7 +130,7 @@ func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Requ
 		GST:          req.GST,
 	}
 	if err := bh.businessStore.CreateLegal(legal); err != nil {
-		bh.logger.Printf("ERROR: create legal: %v\n", err)
+		bh.logger.Error("create legal", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -207,16 +152,16 @@ func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Requ
 func (bh *BusinessHandler) HandleCreateBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateApplicationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: create business application: %v\n", err)
+		bh.logger.Error("create business application", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if req.ID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "business id is required"})
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if err := bh.businessStore.CreateBusinessApplication(&models.BusinessApplication{ID: req.ID, Status: "APPLIED"}); err != nil {
-		bh.logger.Printf("ERROR: create business application: %v\n", err)
+		bh.logger.Error("create business application", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -244,8 +189,12 @@ func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.R
 	}
 	var req models.UpdateBusinessRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: update business: %v\n", err)
+		bh.logger.Error("update business", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err = validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if err = bh.businessStore.UpdateBusiness(&models.Business{
@@ -259,7 +208,7 @@ func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.R
 		Pincode:      req.Pincode,
 		BusinessType: req.BusinessType,
 	}); err != nil {
-		bh.logger.Printf("ERROR: update business: %v\n", err)
+		bh.logger.Error("update business", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -287,8 +236,12 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 	}
 	var req models.CreateSocialRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: update socials: %v\n", err)
+		bh.logger.Error("update socials", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err = validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if err = bh.businessStore.UpdateSocial(&models.Social{
@@ -301,7 +254,7 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 		Facebook:  req.Facebook,
 		Website:   req.Website,
 	}); err != nil {
-		bh.logger.Printf("ERROR: update socials: %v\n", err)
+		bh.logger.Error("update socials", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -329,7 +282,7 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 	}
 	var req models.CreateLegalRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: update legals: %v\n", err)
+		bh.logger.Error("update legals", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
@@ -342,7 +295,7 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 		Fassi:        req.Fassi,
 		GST:          req.GST,
 	}); err != nil {
-		bh.logger.Printf("ERROR: update legals: %v\n", err)
+		bh.logger.Error("update legals", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -372,7 +325,7 @@ func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: accept business application: %v\n", err)
+		bh.logger.Error("accept business application", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -401,12 +354,12 @@ func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter
 	}
 	var req models.RejectApplicationRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: reject business application: %v\n", err)
+		bh.logger.Error("reject business application", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if req.RejectReason == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "reject_reason is required"})
+	if err = validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if err = bh.businessStore.RejectBusinessApplication(&models.BusinessApplication{
@@ -418,7 +371,7 @@ func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: reject business application: %v\n", err)
+		bh.logger.Error("reject business application", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -449,7 +402,7 @@ func (bh *BusinessHandler) HandleGetCompleteBusinessDetails(w http.ResponseWrite
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: get complete business details: %v\n", err)
+		bh.logger.Error("get complete business details", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -480,7 +433,7 @@ func (bh *BusinessHandler) HandleGetBusinessDetails(w http.ResponseWriter, r *ht
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: get business details: %v\n", err)
+		bh.logger.Error("get business details", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -511,7 +464,7 @@ func (bh *BusinessHandler) HandleGetSocialDetails(w http.ResponseWriter, r *http
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "social details not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: get business social details: %v\n", err)
+		bh.logger.Error("get business social details", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -542,7 +495,7 @@ func (bh *BusinessHandler) HandleGetLegalDetails(w http.ResponseWriter, r *http.
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "legal details not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: get business legal details: %v\n", err)
+		bh.logger.Error("get business legal details", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -573,7 +526,7 @@ func (bh *BusinessHandler) HandleGetBusinessApplicationDetails(w http.ResponseWr
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "application not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: get business application details: %v\n", err)
+		bh.logger.Error("get business application details", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -604,8 +557,12 @@ func (bh *BusinessHandler) HandleUpdateVerifyBusinessStatus(w http.ResponseWrite
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
+	if err = validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		return
+	}
 	if err = bh.businessStore.UpdateVerifyBusinessStatus(id, req.Status); err != nil {
-		bh.logger.Printf("ERROR: update verify business status: %v\n", err)
+		bh.logger.Error("update verify business status", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -637,7 +594,7 @@ func (bh *BusinessHandler) HandleUpdateTrustBusinessStatus(w http.ResponseWriter
 		return
 	}
 	if err = bh.businessStore.UpdateTrustBusinessStatus(id, req.Status); err != nil {
-		bh.logger.Printf("ERROR: update trust business status: %v\n", err)
+		bh.logger.Error("update trust business status", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -669,7 +626,7 @@ func (bh *BusinessHandler) HandleUpdateBlockBusinessStatus(w http.ResponseWriter
 		return
 	}
 	if err = bh.businessStore.UpdateBlockBusinessStatus(id, req.Status); err != nil {
-		bh.logger.Printf("ERROR: update block business status: %v\n", err)
+		bh.logger.Error("update block business status", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -691,7 +648,7 @@ func (bh *BusinessHandler) HandleGetAllBusinesses(w http.ResponseWriter, r *http
 	pg := utils.ReadPaginationParams(r)
 	res, err := bh.businessStore.GetAllBusinesses(pg.Limit, pg.Offset())
 	if err != nil {
-		bh.logger.Printf("ERROR: get all businesses: %v\n", err)
+		bh.logger.Error("get all businesses", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -725,7 +682,7 @@ func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.R
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		bh.logger.Printf("ERROR: delete business: %v\n", err)
+		bh.logger.Error("delete business", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -752,7 +709,7 @@ func (bh *BusinessHandler) HandleGetBusinessIDByUserID(w http.ResponseWriter, r 
 	}
 	businessID, err := bh.businessStore.GetBusinessIDByUserID(id)
 	if err != nil {
-		bh.logger.Printf("ERROR: get business id by user id: %v\n", err)
+		bh.logger.Error("get business id by user id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -782,7 +739,7 @@ func (bh *BusinessHandler) HandleIsBusinessApproved(w http.ResponseWriter, r *ht
 	}
 	isApproved, err := bh.businessStore.IsBusinessApproved(id)
 	if err != nil {
-		bh.logger.Printf("ERROR: is business approved: %v\n", err)
+		bh.logger.Error("is business approved", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -804,11 +761,11 @@ func (bh *BusinessHandler) HandleIsBusinessApproved(w http.ResponseWriter, r *ht
 func (bh *BusinessHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.RateBusinessRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		bh.logger.Printf("ERROR: rate business: %v\n", err)
+		bh.logger.Error("rate business", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := bh.validateRateBusinessRequest(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -817,7 +774,7 @@ func (bh *BusinessHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Req
 		UserID:     req.UserID,
 		Rating:     req.Rating,
 	}); err != nil {
-		bh.logger.Printf("ERROR: rate business: %v\n", err)
+		bh.logger.Error("rate business", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -843,7 +800,7 @@ func (bh *BusinessHandler) HandleGetAverageBusinessRating(w http.ResponseWriter,
 	}
 	avg, err := bh.businessStore.GetAverageBusinessRating(id)
 	if err != nil {
-		bh.logger.Printf("ERROR: get average business rating: %v\n", err)
+		bh.logger.Error("get average business rating", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -872,7 +829,7 @@ func (bh *BusinessHandler) HandleGetBusinessRatings(w http.ResponseWriter, r *ht
 	}
 	res, err := bh.businessStore.GetRatingsByBusinessID(id)
 	if err != nil {
-		bh.logger.Printf("ERROR: get business ratings: %v\n", err)
+		bh.logger.Error("get business ratings", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

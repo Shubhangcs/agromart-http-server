@@ -35,11 +35,12 @@ func main() {
 	defer application.DB.Close()
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      routes.SetupRoutes(application),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           routes.SetupRoutes(application),
+		IdleTimeout:       time.Minute,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
 	}
 
 	// Channel to receive OS shutdown signals.
@@ -49,7 +50,7 @@ func main() {
 	// Start server in a goroutine so we can listen for signals concurrently.
 	serverErr := make(chan error, 1)
 	go func() {
-		application.Logger.Printf("INFO: server listening on port %d\n", port)
+		application.Logger.Info("server listening", "port", port)
 		serverErr <- server.ListenAndServe()
 	}()
 
@@ -57,18 +58,19 @@ func main() {
 	select {
 	case err = <-serverErr:
 		if err != nil && err != http.ErrServerClosed {
-			application.Logger.Fatalf("ERROR: server error: %v\n", err)
+			application.Logger.Error("server error", "error", err)
+			os.Exit(1)
 		}
 	case sig := <-quit:
-		application.Logger.Printf("INFO: received signal %s — shutting down gracefully\n", sig)
+		application.Logger.Info("received signal — shutting down gracefully", "signal", sig)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
 		if err = server.Shutdown(ctx); err != nil {
-			application.Logger.Printf("ERROR: graceful shutdown failed: %v\n", err)
+			application.Logger.Error("graceful shutdown failed", "error", err)
 		} else {
-			application.Logger.Println("INFO: server stopped cleanly")
+			application.Logger.Info("server stopped cleanly")
 		}
 	}
 }

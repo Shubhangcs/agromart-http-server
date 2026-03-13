@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/tokens"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // TokenResponse represents a successful token response.
@@ -22,10 +23,10 @@ type TokenResponse struct {
 type TokenHandler struct {
 	userStore     store.UserStore
 	businessStore store.BusinessStore
-	logger        *log.Logger
+	logger        *slog.Logger
 }
 
-func NewTokenHandler(userStore store.UserStore, businessStore store.BusinessStore, logger *log.Logger) *TokenHandler {
+func NewTokenHandler(userStore store.UserStore, businessStore store.BusinessStore, logger *slog.Logger) *TokenHandler {
 	return &TokenHandler{
 		userStore:     userStore,
 		businessStore: businessStore,
@@ -56,8 +57,12 @@ func fullName(first string, last *string) string {
 func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		th.logger.Printf("ERROR: admin login: %v\n", err)
+		th.logger.Error("admin login", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
@@ -67,14 +72,14 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
-		th.logger.Printf("ERROR: admin login: %v\n", err)
+		th.logger.Error("admin login", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 
 	matched, err := admin.Password.Matches(req.Password)
 	if err != nil {
-		th.logger.Printf("ERROR: admin login: password comparison: %v\n", err)
+		th.logger.Error("admin login: password comparison", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -85,7 +90,7 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 
 	token, err := tokens.GenerateNewToken(admin.ID, fullName(admin.FirstName, admin.LastName), nil)
 	if err != nil {
-		th.logger.Printf("ERROR: admin login: token generation: %v\n", err)
+		th.logger.Error("admin login: token generation", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -108,8 +113,12 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		th.logger.Printf("ERROR: user login: %v\n", err)
+		th.logger.Error("user login", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
@@ -119,14 +128,14 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
-		th.logger.Printf("ERROR: user login: %v\n", err)
+		th.logger.Error("user login", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 
 	matched, err := user.Password.Matches(req.Password)
 	if err != nil {
-		th.logger.Printf("ERROR: user login: password comparison: %v\n", err)
+		th.logger.Error("user login: password comparison", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -137,14 +146,14 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 
 	businessID, err := th.businessStore.GetBusinessIDByUserID(user.ID)
 	if err != nil {
-		th.logger.Printf("ERROR: user login: fetch business id: %v\n", err)
+		th.logger.Error("user login: fetch business id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 
 	token, err := tokens.GenerateNewToken(user.ID, fullName(user.FirstName, user.LastName), businessID)
 	if err != nil {
-		th.logger.Printf("ERROR: user login: token generation: %v\n", err)
+		th.logger.Error("user login: token generation", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

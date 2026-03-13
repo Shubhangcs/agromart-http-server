@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -23,11 +23,11 @@ type PresignedURLResponse struct {
 
 type BlobHandler struct {
 	blobStore store.BlobStore
-	logger    *log.Logger
+	logger    *slog.Logger
 	blob      *blob.AWSS3
 }
 
-func NewBlobHandler(logger *log.Logger, blob *blob.AWSS3, blobStore store.BlobStore) *BlobHandler {
+func NewBlobHandler(logger *slog.Logger, blob *blob.AWSS3, blobStore store.BlobStore) *BlobHandler {
 	return &BlobHandler{
 		blobStore: blobStore,
 		logger:    logger,
@@ -50,20 +50,20 @@ func (bh *BlobHandler) HandleUpdateAdminProfileImage(w http.ResponseWriter, r *h
 	adminId, err := utils.ReadParamID(r)
 	var time = time.Now().Unix()
 	if err != nil {
-		bh.logger.Printf("ERROR: update admin profile image: %v\n", err)
+		bh.logger.Error("update admin profile image", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
 	url, err := bh.blob.GenerateUploadPresignedURL(fmt.Sprintf("profile/admins/%s_%d.png", adminId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update admin profile image: %v\n", err)
+		bh.logger.Error("update admin profile image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	err = bh.blobStore.UpdateAdminProfileImage(adminId, fmt.Sprintf("/profile/admins/%s_%d.png", adminId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update admin profile image: %v\n", err)
+		bh.logger.Error("update admin profile image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -85,20 +85,20 @@ func (bh *BlobHandler) HandleUpdateUserProfileImage(w http.ResponseWriter, r *ht
 	userId, err := utils.ReadParamID(r)
 	var time = time.Now().Unix()
 	if err != nil {
-		bh.logger.Printf("ERROR: update user profile image: %v\n", err)
+		bh.logger.Error("update user profile image", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
 	url, err := bh.blob.GenerateUploadPresignedURL(fmt.Sprintf("profile/users/%s_%d.png", userId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update user profile image: %v\n", err)
+		bh.logger.Error("update user profile image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	err = bh.blobStore.UpdateUserProfileImage(userId, fmt.Sprintf("/profile/users/%s_%d.png", userId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update user profile image: %v\n", err)
+		bh.logger.Error("update user profile image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -121,20 +121,20 @@ func (bh *BlobHandler) HandleUpdateBusinessProfileImage(w http.ResponseWriter, r
 	businessId, err := utils.ReadParamID(r)
 	var time = time.Now().Unix()
 	if err != nil {
-		bh.logger.Printf("ERROR: update business profile image: %v\n", err)
+		bh.logger.Error("update business profile image", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
 	url, err := bh.blob.GenerateUploadPresignedURL(fmt.Sprintf("profile/business/%s_%d.png", businessId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update business profile image: %v\n", err)
+		bh.logger.Error("update business profile image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	err = bh.blobStore.UpdateBusinessProfileImage(businessId, fmt.Sprintf("/profile/business/%s_%d.png", businessId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update business profile image: %v\n", err)
+		bh.logger.Error("update business profile image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -157,20 +157,20 @@ func (bh *BlobHandler) HandleUpdateCategoryImage(w http.ResponseWriter, r *http.
 	catId, err := utils.ReadParamID(r)
 	var time = time.Now().Unix()
 	if err != nil {
-		bh.logger.Printf("ERROR: update category image: %v\n", err)
+		bh.logger.Error("update category image", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
 	url, err := bh.blob.GenerateUploadPresignedURL(fmt.Sprintf("categories/%s_%d.png", catId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update category image: %v\n", err)
+		bh.logger.Error("update category image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	err = bh.blobStore.UpdateCategoryImage(catId, fmt.Sprintf("/categories/%s_%d.png", catId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update category image: %v\n", err)
+		bh.logger.Error("update category image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -193,20 +193,20 @@ func (bh *BlobHandler) HandleUpdateSubCategoryImage(w http.ResponseWriter, r *ht
 	catId, err := utils.ReadParamID(r)
 	var time = time.Now().Unix()
 	if err != nil {
-		bh.logger.Printf("ERROR: update sub category image: %v\n", err)
+		bh.logger.Error("update sub category image", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
 	url, err := bh.blob.GenerateUploadPresignedURL(fmt.Sprintf("sub_categories/%s_%d.png", catId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update sub category image: %v\n", err)
+		bh.logger.Error("update sub category image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	err = bh.blobStore.UpdateSubCategoryImage(catId, fmt.Sprintf("/sub_categories/%s_%d.png", catId, time))
 	if err != nil {
-		bh.logger.Printf("ERROR: update sub category image: %v\n", err)
+		bh.logger.Error("update sub category image", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -264,14 +264,14 @@ func (bh *BlobHandler) HandleUpdateProductImage(w http.ResponseWriter, r *http.R
 	var req productImageRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		bh.logger.Printf("ERROR: update product image request: %v\n", err)
+		bh.logger.Error("update product image request", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
 
 	err = req.validateProductImageRequest()
 	if err != nil {
-		bh.logger.Printf("ERROR: update product image request: %v\n", err)
+		bh.logger.Error("update product image request", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -286,14 +286,14 @@ func (bh *BlobHandler) HandleUpdateProductImage(w http.ResponseWriter, r *http.R
 
 	err = bh.blobStore.UpdateProductImage(productImage)
 	if err != nil {
-		bh.logger.Printf("ERROR: update product image request: %v\n", err)
+		bh.logger.Error("update product image request", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 
 	url, err := bh.blob.GenerateUploadPresignedURL(fmt.Sprintf("products/%s/%s.png", req.ProductID, id))
 	if err != nil {
-		bh.logger.Printf("ERROR: update product image request: %v\n", err)
+		bh.logger.Error("update product image request", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -317,28 +317,28 @@ func (bh *BlobHandler) HandleDeleteProductImage(w http.ResponseWriter, r *http.R
 	var req productImageRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		bh.logger.Printf("ERROR: delete product image request: %v\n", err)
+		bh.logger.Error("delete product image request", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request body"})
 		return
 	}
 
 	err = req.validateDeleteProductImageRequest()
 	if err != nil {
-		bh.logger.Printf("ERROR: delete product image request: %v\n", err)
+		bh.logger.Error("delete product image request", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 
 	err = bh.blob.DeleteImage(fmt.Sprintf("products/%s/%s.png", req.ProductID, req.ID))
 	if err != nil {
-		bh.logger.Printf("ERROR: delete product image request: %v\n", err)
+		bh.logger.Error("delete product image request", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 
 	err = bh.blobStore.DeleteProductImage(req.ID)
 	if err != nil {
-		bh.logger.Printf("ERROR: delete product image request: %v\n", err)
+		bh.logger.Error("delete product image request", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

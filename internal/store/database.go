@@ -4,20 +4,21 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
-	"os"
+	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/shubhangcs/agromart-server/internal/env"
 )
 
 func Open() (*sql.DB, error) {
 	var (
-		databaseHost     = os.Getenv("DATABASE_HOST")
-		databasePort     = os.Getenv("DATABASE_PORT")
-		databaseUser     = os.Getenv("DATABASE_USER")
-		databaseName     = os.Getenv("DATABASE_NAME")
-		databasePassword = os.Getenv("DATABASE_PASSWORD")
-		databaseSSLMode  = os.Getenv("DATABASE_SSL_MODE")
+		databaseHost     = env.GetString("DATABASE_HOST", "localhost")
+		databasePort     = env.GetString("DATABASE_PORT", "5432")
+		databaseUser     = env.GetString("DATABASE_USER", "postgres")
+		databaseName     = env.GetString("DATABASE_NAME", "postgres")
+		databasePassword = env.GetString("DATABASE_PASSWORD", "postgres")
+		databaseSSLMode  = env.GetString("DATABASE_SSL_MODE", "disable")
 	)
 	db, err := sql.Open(
 		"pgx",
@@ -34,6 +35,11 @@ func Open() (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Open: %w", err)
 	}
+
+	db.SetMaxOpenConns(env.GetInt("DATABASE_MAX_OPEN_CONNS", 25))
+	db.SetMaxIdleConns(env.GetInt("DATABASE_MAX_IDLE_CONNS", 25))
+	db.SetConnMaxLifetime(time.Duration(env.GetInt("DATABASE_CONN_MAX_LIFETIME_MIN", 15)) * time.Minute)
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("Open: %w", err)
 	}

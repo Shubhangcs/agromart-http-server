@@ -3,7 +3,7 @@ package app
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -17,7 +17,7 @@ import (
 )
 
 type Application struct {
-	Logger          *log.Logger
+	Logger          *slog.Logger
 	DB              *sql.DB
 	Blob            *blob.AWSS3
 	Hub             *hub.Hub
@@ -35,8 +35,8 @@ type Application struct {
 }
 
 func NewApplication() (*Application, error) {
-	// Creating a new logger
-	logger := log.New(os.Stdout, "AGROMART ", log.Ldate|log.Ltime)
+	// Creating a new structured logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	// Connecting to database
 	pgdb, err := store.Open()
@@ -106,10 +106,10 @@ func NewApplication() (*Application, error) {
 
 func (a *Application) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	if err := a.DB.Ping(); err != nil {
-		a.Logger.Printf("ERROR: healthCheck: %s\n", err.Error())
+		a.Logger.Error("healthCheck", "error", err.Error())
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"status": fmt.Sprintf("error: %s", err.Error())})
 		return
 	}
-	a.Logger.Println("INFO: healthCheck: system is healthy")
+	a.Logger.Info("healthCheck: system is healthy")
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"status": "system is healthy"})
 }

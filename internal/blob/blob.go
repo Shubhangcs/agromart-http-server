@@ -2,12 +2,12 @@ package blob
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/shubhangcs/agromart-server/internal/env"
 )
 
 type AWSS3 struct {
@@ -20,10 +20,10 @@ type AWSS3 struct {
 
 func Connect() (*AWSS3, error) {
 	var (
-		accessKey  = os.Getenv("ACCESS_KEY")
-		secretKey  = os.Getenv("SECRET_KEY")
-		region     = os.Getenv("REGION")
-		bucketName = os.Getenv("BUCKET_NAME")
+		accessKey  = env.GetString("ACCESS_KEY", "")
+		secretKey  = env.GetString("SECRET_KEY", "")
+		region     = env.GetString("REGION", "ap-south-1")
+		bucketName = env.GetString("BUCKET_NAME", "")
 	)
 	creds := credentials.NewStaticCredentialsProvider(
 		accessKey,

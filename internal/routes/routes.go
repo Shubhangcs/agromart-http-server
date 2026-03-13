@@ -15,13 +15,13 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Global middlewares — applied to every request.
-	r.Use(middleware.RequestID)                      // inject X-Request-ID header
-	r.Use(middleware.RealIP)                         // use X-Real-IP / X-Forwarded-For
-	r.Use(middleware.Logger)                         // structured access log
+	r.Use(middleware.RequestID)                       // inject X-Request-ID header
+	r.Use(middleware.RealIP)                          // use X-Real-IP / X-Forwarded-For
+	r.Use(middleware.Logger)                          // structured access log
 	r.Use(middlewares.RecoveryMiddleware(app.Logger)) // panic → 500, never crash
-	r.Use(middlewares.CORSMiddleware)                // CORS headers
-	r.Use(middleware.Timeout(30 * time.Second))      // global request timeout
-	r.Use(middleware.RequestSize(5 << 20))           // max body 5 MB
+	r.Use(middlewares.CORSMiddleware)                 // CORS headers
+	r.Use(middleware.Timeout(30 * time.Second))       // global request timeout
+	r.Use(middleware.RequestSize(5 << 20))            // max body 5 MB
 
 	r.Get("/health", app.HealthCheck)
 	r.Get("/swagger/*", httpSwagger.WrapHandler)

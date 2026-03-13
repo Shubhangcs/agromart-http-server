@@ -4,50 +4,26 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // RFQHandler handles all RFQ-related HTTP requests.
 type RFQHandler struct {
 	rfqStore store.RFQStore
-	logger   *log.Logger
+	logger   *slog.Logger
 }
 
-func NewRFQHandler(rfqStore store.RFQStore, logger *log.Logger) *RFQHandler {
+func NewRFQHandler(rfqStore store.RFQStore, logger *slog.Logger) *RFQHandler {
 	return &RFQHandler{
 		rfqStore: rfqStore,
 		logger:   logger,
 	}
-}
-
-func (rh *RFQHandler) validateCreateRFQ(req *models.CreateRFQRequest) error {
-	if req.BusinessID == "" {
-		return errors.New("business_id is required")
-	}
-	if req.CategoryID == "" {
-		return errors.New("category_id is required")
-	}
-	if req.SubCategoryID == "" {
-		return errors.New("sub_category_id is required")
-	}
-	if req.ProductName == "" {
-		return errors.New("product_name is required")
-	}
-	if req.Quantity <= 0 {
-		return errors.New("quantity must be greater than zero")
-	}
-	if req.Unit == "" {
-		return errors.New("unit is required")
-	}
-	if req.Price <= 0 {
-		return errors.New("price must be greater than zero")
-	}
-	return nil
 }
 
 // HandleCreateRFQ godoc
@@ -65,11 +41,11 @@ func (rh *RFQHandler) validateCreateRFQ(req *models.CreateRFQRequest) error {
 func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateRFQRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		rh.logger.Printf("ERROR: create rfq: %v\n", err)
+		rh.logger.Error("create rfq", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := rh.validateCreateRFQ(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -84,7 +60,7 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 		IsRFQActive:   req.IsRFQActive,
 	}
 	if err := rh.rfqStore.CreateRFQ(rfq); err != nil {
-		rh.logger.Printf("ERROR: create rfq: %v\n", err)
+		rh.logger.Error("create rfq", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -113,7 +89,7 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 	}
 	var req models.ActivateRFQRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		rh.logger.Printf("ERROR: activate rfq: %v\n", err)
+		rh.logger.Error("activate rfq", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
@@ -122,7 +98,7 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
 			return
 		}
-		rh.logger.Printf("ERROR: activate rfq: %v\n", err)
+		rh.logger.Error("activate rfq", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -151,8 +127,12 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 	}
 	var req models.UpdateRFQRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		rh.logger.Printf("ERROR: update rfq: %v\n", err)
+		rh.logger.Error("update rfq", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err = validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if err = rh.rfqStore.UpdateRFQ(&models.RFQ{
@@ -168,7 +148,7 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
 			return
 		}
-		rh.logger.Printf("ERROR: update rfq: %v\n", err)
+		rh.logger.Error("update rfq", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -198,7 +178,7 @@ func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
 			return
 		}
-		rh.logger.Printf("ERROR: delete rfq: %v\n", err)
+		rh.logger.Error("delete rfq", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -224,7 +204,7 @@ func (rh *RFQHandler) HandleGetAllRFQ(w http.ResponseWriter, r *http.Request) {
 	filter := utils.ReadRFQFilter(r)
 	res, err := rh.rfqStore.GetAllRFQ(filter, pg.Limit, pg.Offset())
 	if err != nil {
-		rh.logger.Printf("ERROR: get all rfq: %v\n", err)
+		rh.logger.Error("get all rfq", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -257,7 +237,7 @@ func (rh *RFQHandler) HandleGetRFQByBusinessID(w http.ResponseWriter, r *http.Re
 	pg := utils.ReadPaginationParams(r)
 	res, err := rh.rfqStore.GetRFQByBusinessID(id, pg.Limit, pg.Offset())
 	if err != nil {
-		rh.logger.Printf("ERROR: get rfq by business id: %v\n", err)
+		rh.logger.Error("get rfq by business id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

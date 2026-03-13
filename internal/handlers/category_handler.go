@@ -4,48 +4,26 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 // CategoryHandler handles all category and sub-category HTTP requests.
 type CategoryHandler struct {
 	categoryStore store.CategoryStore
-	logger        *log.Logger
+	logger        *slog.Logger
 }
 
-func NewCategoryHandler(categoryStore store.CategoryStore, logger *log.Logger) *CategoryHandler {
+func NewCategoryHandler(categoryStore store.CategoryStore, logger *slog.Logger) *CategoryHandler {
 	return &CategoryHandler{
 		categoryStore: categoryStore,
 		logger:        logger,
 	}
-}
-
-func (ch *CategoryHandler) validateCreateCategory(req *models.CreateCategoryRequest) error {
-	if req.Name == "" {
-		return errors.New("name is required")
-	}
-	if req.Description == "" {
-		return errors.New("description is required")
-	}
-	return nil
-}
-
-func (ch *CategoryHandler) validateCreateSubCategory(req *models.CreateSubCategoryRequest) error {
-	if req.CategoryID == "" {
-		return errors.New("category_id is required")
-	}
-	if req.Name == "" {
-		return errors.New("name is required")
-	}
-	if req.Description == "" {
-		return errors.New("description is required")
-	}
-	return nil
 }
 
 // HandleCreateCategory godoc
@@ -63,11 +41,11 @@ func (ch *CategoryHandler) validateCreateSubCategory(req *models.CreateSubCatego
 func (ch *CategoryHandler) HandleCreateCategory(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ch.logger.Printf("ERROR: create category: %v\n", err)
+		ch.logger.Error("create category", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := ch.validateCreateCategory(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -76,7 +54,7 @@ func (ch *CategoryHandler) HandleCreateCategory(w http.ResponseWriter, r *http.R
 		Description: req.Description,
 	}
 	if err := ch.categoryStore.CreateCategory(category); err != nil {
-		ch.logger.Printf("ERROR: create category: %v\n", err)
+		ch.logger.Error("create category", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -98,11 +76,11 @@ func (ch *CategoryHandler) HandleCreateCategory(w http.ResponseWriter, r *http.R
 func (ch *CategoryHandler) HandleCreateSubCategory(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSubCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ch.logger.Printf("ERROR: create sub category: %v\n", err)
+		ch.logger.Error("create sub category", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if err := ch.validateCreateSubCategory(&req); err != nil {
+	if err := validator.Validate(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
@@ -112,7 +90,7 @@ func (ch *CategoryHandler) HandleCreateSubCategory(w http.ResponseWriter, r *htt
 		Description: req.Description,
 	}
 	if err := ch.categoryStore.CreateSubCategory(subCategory); err != nil {
-		ch.logger.Printf("ERROR: create sub category: %v\n", err)
+		ch.logger.Error("create sub category", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -141,7 +119,7 @@ func (ch *CategoryHandler) HandleUpdateCategory(w http.ResponseWriter, r *http.R
 	}
 	var req models.UpdateCategoryRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ch.logger.Printf("ERROR: update category: %v\n", err)
+		ch.logger.Error("update category", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
@@ -154,7 +132,7 @@ func (ch *CategoryHandler) HandleUpdateCategory(w http.ResponseWriter, r *http.R
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "category not found"})
 			return
 		}
-		ch.logger.Printf("ERROR: update category: %v\n", err)
+		ch.logger.Error("update category", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -183,7 +161,7 @@ func (ch *CategoryHandler) HandleUpdateSubCategory(w http.ResponseWriter, r *htt
 	}
 	var req models.UpdateSubCategoryRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ch.logger.Printf("ERROR: update sub category: %v\n", err)
+		ch.logger.Error("update sub category", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
@@ -196,7 +174,7 @@ func (ch *CategoryHandler) HandleUpdateSubCategory(w http.ResponseWriter, r *htt
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "sub category not found"})
 			return
 		}
-		ch.logger.Printf("ERROR: update sub category: %v\n", err)
+		ch.logger.Error("update sub category", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -226,7 +204,7 @@ func (ch *CategoryHandler) HandleDeleteCategory(w http.ResponseWriter, r *http.R
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "category not found"})
 			return
 		}
-		ch.logger.Printf("ERROR: delete category: %v\n", err)
+		ch.logger.Error("delete category", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -256,7 +234,7 @@ func (ch *CategoryHandler) HandleDeleteSubCategory(w http.ResponseWriter, r *htt
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "sub category not found"})
 			return
 		}
-		ch.logger.Printf("ERROR: delete sub category: %v\n", err)
+		ch.logger.Error("delete sub category", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -287,7 +265,7 @@ func (ch *CategoryHandler) HandleGetCategoryByID(w http.ResponseWriter, r *http.
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "category not found"})
 			return
 		}
-		ch.logger.Printf("ERROR: get category by id: %v\n", err)
+		ch.logger.Error("get category by id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -318,7 +296,7 @@ func (ch *CategoryHandler) HandleGetSubCategoryByID(w http.ResponseWriter, r *ht
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "sub category not found"})
 			return
 		}
-		ch.logger.Printf("ERROR: get sub category by id: %v\n", err)
+		ch.logger.Error("get sub category by id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -337,7 +315,7 @@ func (ch *CategoryHandler) HandleGetSubCategoryByID(w http.ResponseWriter, r *ht
 func (ch *CategoryHandler) HandleGetAllCategories(w http.ResponseWriter, r *http.Request) {
 	res, err := ch.categoryStore.GetAllCategories()
 	if err != nil {
-		ch.logger.Printf("ERROR: get all categories: %v\n", err)
+		ch.logger.Error("get all categories", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -356,7 +334,7 @@ func (ch *CategoryHandler) HandleGetAllCategories(w http.ResponseWriter, r *http
 func (ch *CategoryHandler) HandleGetAllSubCategories(w http.ResponseWriter, r *http.Request) {
 	res, err := ch.categoryStore.GetAllSubCategories()
 	if err != nil {
-		ch.logger.Printf("ERROR: get all sub categories: %v\n", err)
+		ch.logger.Error("get all sub categories", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -382,7 +360,7 @@ func (ch *CategoryHandler) HandleGetSubCategoriesByCategoryID(w http.ResponseWri
 	}
 	res, err := ch.categoryStore.GetSubCategoriesByCategoryID(id)
 	if err != nil {
-		ch.logger.Printf("ERROR: get sub categories by category id: %v\n", err)
+		ch.logger.Error("get sub categories by category id", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}

@@ -2,16 +2,16 @@ package tokens
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/shubhangcs/agromart-server/internal/env"
 )
 
 var (
-	jwtSecretKey = os.Getenv("JWT_SECRET_KEY")
+	jwtSecretKey = env.GetString("JWT_SECRET_KEY", "secret")
 	ttl          = time.Hour * 24 // 24-hour access token
-	issuer       = os.Getenv("JWT_TOKEN_ISSUER")
+	issuer       = env.GetString("JWT_TOKEN_ISSUER", "issuer")
 )
 
 // Token holds the JWT claims used throughout the application.

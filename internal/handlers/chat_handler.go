@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
+	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 var upgrader = websocket.Upgrader{
@@ -33,10 +34,10 @@ type wsIncoming struct {
 type ChatHandler struct {
 	chatStore store.ChatStore
 	hub       *hub.Hub
-	logger    *log.Logger
+	logger    *slog.Logger
 }
 
-func NewChatHandler(chatStore store.ChatStore, h *hub.Hub, logger *log.Logger) *ChatHandler {
+func NewChatHandler(chatStore store.ChatStore, h *hub.Hub, logger *slog.Logger) *ChatHandler {
 	return &ChatHandler{
 		chatStore: chatStore,
 		hub:       h,
@@ -60,7 +61,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		ch.logger.Printf("ERROR: ws upgrade: %v\n", err)
+		ch.logger.Error("ws upgrade", "error", err)
 		return
 	}
 
@@ -77,7 +78,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		for payload := range client.Send {
 			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
-				ch.logger.Printf("ERROR: ws write [%s]: %v\n", userID, err)
+				ch.logger.Error("ws write", "user_id", userID, "error", err)
 				return
 			}
 		}
@@ -112,7 +113,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		_, raw, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				ch.logger.Printf("ERROR: ws read [%s]: %v\n", userID, err)
+				ch.logger.Error("ws read", "user_id", userID, "error", err)
 			}
 			return
 		}
@@ -120,7 +121,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 		var incoming wsIncoming
 		if err := json.Unmarshal(raw, &incoming); err != nil {
-			ch.logger.Printf("WARN: ws bad payload [%s]: %v\n", userID, err)
+			ch.logger.Warn("ws bad payload", "user_id", userID, "error", err)
 			continue
 		}
 		if incoming.ReceiverID == "" || incoming.Content == "" {
@@ -136,7 +137,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			Content:    incoming.Content,
 		}
 		if err := ch.chatStore.SaveMessage(msg); err != nil {
-			ch.logger.Printf("ERROR: ws save message [%s]: %v\n", userID, err)
+			ch.logger.Error("ws save message", "user_id", userID, "error", err)
 			continue
 		}
 
@@ -168,20 +169,12 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
 	var req models.SendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		ch.logger.Printf("ERROR: send message: %v\n", err)
+		ch.logger.Error("send message", "error", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	if req.SenderID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "sender_id is required"})
-		return
-	}
-	if req.ReceiverID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "receiver_id is required"})
-		return
-	}
-	if req.Content == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "content is required"})
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	if req.SenderID == req.ReceiverID {
@@ -195,7 +188,7 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 		Content:    req.Content,
 	}
 	if err := ch.chatStore.SaveMessage(msg); err != nil {
-		ch.logger.Printf("ERROR: send message: %v\n", err)
+		ch.logger.Error("send message", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -245,7 +238,7 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 			})
 			return
 		}
-		ch.logger.Printf("ERROR: get chat history: %v\n", err)
+		ch.logger.Error("get chat history", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -287,7 +280,7 @@ func (ch *ChatHandler) HandleMarkAsRead(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := ch.chatStore.MarkAsRead(senderID, receiverID); err != nil {
-		ch.logger.Printf("ERROR: mark as read: %v\n", err)
+		ch.logger.Error("mark as read", "error", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
