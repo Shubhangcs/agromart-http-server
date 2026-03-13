@@ -2,44 +2,26 @@ package store
 
 import (
 	"database/sql"
-	"time"
+
+	"github.com/shubhangcs/agromart-server/internal/models"
 )
-
-type Category struct {
-	ID            string    `json:"id"`
-	CategoryImage *string   `json:"category_image"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	CreatedAT     time.Time `json:"created_at"`
-	UpdatedAT     time.Time `json:"updated_at"`
-}
-
-type SubCategory struct {
-	ID               string    `json:"id"`
-	CategoryID       string    `json:"category_id"`
-	SubCategoryImage *string   `json:"category_image"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	CreatedAT        time.Time `json:"created_at"`
-	UpdatedAT        time.Time `json:"updated_at"`
-}
 
 type PostgresCategoryStore struct {
 	db *sql.DB
 }
 
 type CategoryStore interface {
-	CreateCategory(*Category) error
-	CreateSubCategory(*SubCategory) error
-	UpdateCategory(*Category) error
-	UpdateSubCategory(*SubCategory) error
+	CreateCategory(*models.Category) error
+	CreateSubCategory(*models.SubCategory) error
+	UpdateCategory(*models.Category) error
+	UpdateSubCategory(*models.SubCategory) error
 	DeleteCategory(id string) error
 	DeleteSubCategory(id string) error
-	GetCategoryByID(id string) (*Category, error)
-	GetSubCategoryByID(id string) (*SubCategory, error)
-	GetAllCategories() ([]Category, error)
-	GetAllSubCategories() ([]SubCategory, error)
-	GetSubCategoriesByCategoryID(id string) ([]SubCategory, error)
+	GetCategoryByID(id string) (*models.Category, error)
+	GetSubCategoryByID(id string) (*models.SubCategory, error)
+	GetAllCategories() ([]models.Category, error)
+	GetAllSubCategories() ([]models.SubCategory, error)
+	GetSubCategoriesByCategoryID(id string) ([]models.SubCategory, error)
 }
 
 func NewPostgresCategoryStore(db *sql.DB) *PostgresCategoryStore {
@@ -48,13 +30,13 @@ func NewPostgresCategoryStore(db *sql.DB) *PostgresCategoryStore {
 	}
 }
 
-func (cs *PostgresCategoryStore) CreateCategory(c *Category) error {
+func (cs *PostgresCategoryStore) CreateCategory(c *models.Category) error {
 	query := `
 	INSERT INTO categories (
 		name,
 		description
 	) VALUES (
-		$1 , $2 
+		$1 , $2
 	)RETURNING id;
 	`
 
@@ -69,7 +51,7 @@ func (cs *PostgresCategoryStore) CreateCategory(c *Category) error {
 	return nil
 }
 
-func (cs *PostgresCategoryStore) CreateSubCategory(sc *SubCategory) error {
+func (cs *PostgresCategoryStore) CreateSubCategory(sc *models.SubCategory) error {
 	query := `
 	INSERT INTO sub_categories (
 		category_id,
@@ -91,7 +73,7 @@ func (cs *PostgresCategoryStore) CreateSubCategory(sc *SubCategory) error {
 	return nil
 }
 
-func (cs *PostgresCategoryStore) UpdateCategory(c *Category) error {
+func (cs *PostgresCategoryStore) UpdateCategory(c *models.Category) error {
 	query := `
 	UPDATE categories
 	SET name = COALESCE($1, name),
@@ -123,7 +105,7 @@ func (cs *PostgresCategoryStore) UpdateCategory(c *Category) error {
 	return nil
 }
 
-func (cs *PostgresCategoryStore) UpdateSubCategory(sc *SubCategory) error {
+func (cs *PostgresCategoryStore) UpdateSubCategory(sc *models.SubCategory) error {
 	query := `
 	UPDATE sub_categories
 	SET name = COALESCE($1, name),
@@ -205,7 +187,7 @@ func (cs *PostgresCategoryStore) DeleteSubCategory(id string) error {
 	return nil
 }
 
-func (cs *PostgresCategoryStore) GetCategoryByID(id string) (*Category, error) {
+func (cs *PostgresCategoryStore) GetCategoryByID(id string) (*models.Category, error) {
 	query := `
 	SELECT
 		id,
@@ -217,7 +199,7 @@ func (cs *PostgresCategoryStore) GetCategoryByID(id string) (*Category, error) {
 	FROM categories
 	WHERE id = $1;
 	`
-	var category Category
+	var category models.Category
 	err := cs.db.QueryRow(
 		query,
 		id,
@@ -237,9 +219,9 @@ func (cs *PostgresCategoryStore) GetCategoryByID(id string) (*Category, error) {
 	return &category, nil
 }
 
-func (cs *PostgresCategoryStore) GetSubCategoryByID(id string) (*SubCategory, error) {
+func (cs *PostgresCategoryStore) GetSubCategoryByID(id string) (*models.SubCategory, error) {
 	query := `
-	SELECT 
+	SELECT
 		id,
 		category_id,
 		sub_category_image,
@@ -250,7 +232,7 @@ func (cs *PostgresCategoryStore) GetSubCategoryByID(id string) (*SubCategory, er
 	FROM sub_categories
 	WHERE id = $1;
 	`
-	var subCategory SubCategory
+	var subCategory models.SubCategory
 	err := cs.db.QueryRow(
 		query,
 		id,
@@ -271,9 +253,9 @@ func (cs *PostgresCategoryStore) GetSubCategoryByID(id string) (*SubCategory, er
 	return &subCategory, nil
 }
 
-func (cs *PostgresCategoryStore) GetAllCategories() ([]Category, error) {
+func (cs *PostgresCategoryStore) GetAllCategories() ([]models.Category, error) {
 	query := `
-	SELECT 
+	SELECT
 		id,
 		category_image,
 		name,
@@ -289,9 +271,9 @@ func (cs *PostgresCategoryStore) GetAllCategories() ([]Category, error) {
 	}
 	defer res.Close()
 
-	var categories []Category
+	var categories []models.Category
 	for res.Next() {
-		var c Category
+		var c models.Category
 		err = res.Scan(
 			&c.ID,
 			&c.CategoryImage,
@@ -315,9 +297,9 @@ func (cs *PostgresCategoryStore) GetAllCategories() ([]Category, error) {
 	return categories, nil
 }
 
-func (cs *PostgresCategoryStore) GetAllSubCategories() ([]SubCategory, error) {
+func (cs *PostgresCategoryStore) GetAllSubCategories() ([]models.SubCategory, error) {
 	query := `
-	SELECT 
+	SELECT
 		id,
 		category_id,
 		sub_category_image,
@@ -334,9 +316,9 @@ func (cs *PostgresCategoryStore) GetAllSubCategories() ([]SubCategory, error) {
 	}
 	defer res.Close()
 
-	var subCategories []SubCategory
+	var subCategories []models.SubCategory
 	for res.Next() {
-		var sc SubCategory
+		var sc models.SubCategory
 		err = res.Scan(
 			&sc.ID,
 			&sc.CategoryID,
@@ -361,7 +343,7 @@ func (cs *PostgresCategoryStore) GetAllSubCategories() ([]SubCategory, error) {
 	return subCategories, nil
 }
 
-func (cs *PostgresCategoryStore) GetSubCategoriesByCategoryID(id string) ([]SubCategory, error) {
+func (cs *PostgresCategoryStore) GetSubCategoriesByCategoryID(id string) ([]models.SubCategory, error) {
 	query := `
 	SELECT
 		id,
@@ -381,9 +363,9 @@ func (cs *PostgresCategoryStore) GetSubCategoriesByCategoryID(id string) ([]SubC
 	}
 	defer res.Close()
 
-	var subCategories []SubCategory
+	var subCategories []models.SubCategory
 	for res.Next() {
-		var sc SubCategory
+		var sc models.SubCategory
 		err = res.Scan(
 			&sc.ID,
 			&sc.CategoryID,

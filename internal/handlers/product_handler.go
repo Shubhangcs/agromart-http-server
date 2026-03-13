@@ -1,33 +1,18 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
-	"time"
 
+	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 )
 
-type productRequest struct {
-	ID              string                `json:"id"`
-	BusinessID      string                `json:"business_id"`
-	CategoryID      string                `json:"category_id"`
-	SubCategoryID   string                `json:"sub_category_id"`
-	Name            string                `json:"name"`
-	Description     string                `json:"description"`
-	Quantity        float64               `json:"quantity"`
-	Unit            string                `json:"unit"`
-	Price           float64               `json:"price"`
-	MOQ             string                `json:"moq"`
-	Images          []store.ProductImages `json:"product_images"`
-	IsProductActive bool                  `json:"is_product_active"`
-	CreatedAT       time.Time             `json:"created_at"`
-	UpdatedAT       time.Time             `json:"updated_at"`
-}
-
+// ProductHandler handles all product-related HTTP requests.
 type ProductHandler struct {
 	productStore store.ProductStore
 	logger       *log.Logger
@@ -40,54 +25,60 @@ func NewProductHandler(productStore store.ProductStore, logger *log.Logger) *Pro
 	}
 }
 
-func (ph *ProductHandler) validateCreateProductRequest(req *productRequest) error {
+func (ph *ProductHandler) validateCreateProductRequest(req *models.CreateProductRequest) error {
 	if req.BusinessID == "" {
-		return errors.New("invalid request business id is required")
+		return errors.New("business_id is required")
 	}
 	if req.CategoryID == "" {
-		return errors.New("invalid request category id is required")
+		return errors.New("category_id is required")
 	}
 	if req.SubCategoryID == "" {
-		return errors.New("invalid request sub category id is required")
+		return errors.New("sub_category_id is required")
 	}
 	if req.Name == "" {
-		return errors.New("invalid request product name is required")
+		return errors.New("product name is required")
 	}
 	if req.Description == "" {
-		return errors.New("invalid request product description is required")
+		return errors.New("description is required")
 	}
-	if req.Quantity == 0 {
-		return errors.New("invalid request product quantity is required")
+	if req.Quantity <= 0 {
+		return errors.New("quantity must be greater than zero")
 	}
 	if req.Unit == "" {
-		return errors.New("invalid request unit is required")
+		return errors.New("unit is required")
 	}
-	if req.Price == 0 {
-		return errors.New("invalid request product price is required")
+	if req.Price <= 0 {
+		return errors.New("price must be greater than zero")
 	}
 	if req.MOQ == "" {
-		return errors.New("invalid request moq is required")
+		return errors.New("moq is required")
 	}
 	return nil
 }
 
+// HandleCreateProduct godoc
+// @Summary      Create a product
+// @Description  Creates a new product listing for a business
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        body body models.CreateProductRequest true "Product creation payload"
+// @Success      201 {object} map[string]interface{} "product_id returned"
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/create [post]
 func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Request) {
-	var req productRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	var req models.CreateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		ph.logger.Printf("ERROR: create product: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-
-	err = ph.validateCreateProductRequest(&req)
-	if err != nil {
-		ph.logger.Printf("ERROR: create product: %v\n", err)
+	if err := ph.validateCreateProductRequest(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	product := &store.Product{
+	product := &models.Product{
 		BusinessID:      req.BusinessID,
 		CategoryID:      req.CategoryID,
 		SubCategoryID:   req.SubCategoryID,
@@ -99,34 +90,40 @@ func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Req
 		MOQ:             req.MOQ,
 		IsProductActive: req.IsProductActive,
 	}
-
-	err = ph.productStore.CreateProduct(product)
-	if err != nil {
+	if err := ph.productStore.CreateProduct(product); err != nil {
 		ph.logger.Printf("ERROR: create product: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "product created successfully", "product_id": product.ID})
 }
 
+// HandleUpdateProduct godoc
+// @Summary      Update a product
+// @Description  Updates the details of the product with the given ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id   path string                      true "Product ID"
+// @Param        body body models.UpdateProductRequest true "Product update payload"
+// @Success      200 {object} MessageResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/update/{id} [put]
 func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: update product: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	var req productRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	var req models.UpdateProductRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		ph.logger.Printf("ERROR: update product: %v\n", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request body"})
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-
-	product := &store.Product{
+	if err = ph.productStore.UpdateProduct(&models.Product{
 		ID:            id,
 		Name:          req.Name,
 		CategoryID:    req.CategoryID,
@@ -135,164 +132,270 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 		Price:         req.Price,
 		Unit:          req.Unit,
 		MOQ:           req.MOQ,
-	}
-
-	err = ph.productStore.UpdateProduct(product)
-	if err != nil {
+		Description:   req.Description,
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
+			return
+		}
 		ph.logger.Printf("ERROR: update product: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product updated successfully"})
 }
 
+// HandleDeleteProduct godoc
+// @Summary      Delete a product
+// @Description  Deletes the product with the given ID
+// @Tags         products
+// @Produce      json
+// @Param        id path string true "Product ID"
+// @Success      200 {object} MessageResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/delete/{id} [delete]
 func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: delete product: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	err = ph.productStore.DeleteProduct(id)
-	if err != nil {
+	if err = ph.productStore.DeleteProduct(id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
+			return
+		}
 		ph.logger.Printf("ERROR: delete product: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product deleted successfully"})
 }
 
+// HandleGetAllProducts godoc
+// @Summary      Get all products
+// @Description  Returns a paginated list of active products. Supports optional name search and location filters.
+// @Tags         products
+// @Produce      json
+// @Param        page  query string false "Page number (default 1)"
+// @Param        limit query string false "Items per page (default 20, max 100)"
+// @Param        q     query string false "Search by product name (case-insensitive)"
+// @Param        city  query string false "Filter by business city (case-insensitive)"
+// @Param        state query string false "Filter by business state (case-insensitive)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/get/all [get]
 func (ph *ProductHandler) HandleGetAllProducts(w http.ResponseWriter, r *http.Request) {
-	res, err := ph.productStore.GetAllProducts()
+	pg := utils.ReadPaginationParams(r)
+	filter := utils.ReadProductFilter(r)
+	res, err := ph.productStore.GetAllProducts(filter, pg.Limit, pg.Offset())
 	if err != nil {
 		ph.logger.Printf("ERROR: get all products: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "products fetched successfully", "products": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "products fetched successfully",
+		"products":   res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }
 
+// HandleGetBusinessProducts godoc
+// @Summary      Get products by business
+// @Description  Returns a paginated list of products for the given business ID
+// @Tags         products
+// @Produce      json
+// @Param        id    path  string true  "Business ID"
+// @Param        page  query int    false "Page number (default 1)"
+// @Param        limit query int    false "Items per page (default 20, max 100)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/get/business/{id} [get]
 func (ph *ProductHandler) HandleGetBusinessProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: get business products: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	res, err := ph.productStore.GetBusinessProducts(id)
+	pg := utils.ReadPaginationParams(r)
+	res, err := ph.productStore.GetBusinessProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
 		ph.logger.Printf("ERROR: get business products: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "products fetched successfully", "products": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "products fetched successfully",
+		"products":   res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }
 
+// HandleGetCategoryBasedProducts godoc
+// @Summary      Get products by category
+// @Description  Returns a paginated list of active products in the given category
+// @Tags         products
+// @Produce      json
+// @Param        id    path  string true  "Category ID"
+// @Param        page  query int    false "Page number (default 1)"
+// @Param        limit query int    false "Items per page (default 20, max 100)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/get/category/{id} [get]
 func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: get category based products: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	res, err := ph.productStore.GetCategoryBasedProducts(id)
+	pg := utils.ReadPaginationParams(r)
+	res, err := ph.productStore.GetCategoryBasedProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
 		ph.logger.Printf("ERROR: get category based products: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "products fetched successfully", "products": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "products fetched successfully",
+		"products":   res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }
 
+// HandleGetSubCategoryBasedProducts godoc
+// @Summary      Get products by sub-category
+// @Description  Returns a paginated list of active products in the given sub-category
+// @Tags         products
+// @Produce      json
+// @Param        id    path  string true  "Sub-category ID"
+// @Param        page  query int    false "Page number (default 1)"
+// @Param        limit query int    false "Items per page (default 20, max 100)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/get/sub/category/{id} [get]
 func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: get sub category based products: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	res, err := ph.productStore.GetSubCategoryBasedProducts(id)
+	pg := utils.ReadPaginationParams(r)
+	res, err := ph.productStore.GetSubCategoryBasedProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
 		ph.logger.Printf("ERROR: get sub category based products: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "products fetched successfully", "products": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "products fetched successfully",
+		"products":   res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }
 
+// HandleGetFollowersProducts godoc
+// @Summary      Get products from followed businesses
+// @Description  Returns a paginated list of active products from all businesses the user follows
+// @Tags         products
+// @Produce      json
+// @Param        id    path  string true  "User ID"
+// @Param        page  query int    false "Page number (default 1)"
+// @Param        limit query int    false "Items per page (default 20, max 100)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/get/followers/{id} [get]
 func (ph *ProductHandler) HandleGetFollowersProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: get followers products: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	res, err := ph.productStore.GetFollowersProducts(id)
+	pg := utils.ReadPaginationParams(r)
+	res, err := ph.productStore.GetFollowersProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
 		ph.logger.Printf("ERROR: get followers products: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "products fetched successfully", "products": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "products fetched successfully",
+		"products":   res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }
 
+// HandleGetProductDetailsByID godoc
+// @Summary      Get product details
+// @Description  Returns full product details including business, category, and image info
+// @Tags         products
+// @Produce      json
+// @Param        id path string true "Product ID"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/get/{id} [get]
 func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: get product details by id: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
 	res, err := ph.productStore.GetProductDetailsByID(id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
+			return
+		}
 		ph.logger.Printf("ERROR: get product details by id: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product details fetched successfully", "product_details": res})
 }
 
+// HandleChangeProductActivateStatus godoc
+// @Summary      Toggle product active status
+// @Description  Activates or deactivates the product with the given ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id   path  string                            true "Product ID"
+// @Param        body body  models.ChangeProductStatusRequest true "Status payload"
+// @Success      200 {object} MessageResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /product/update/status/{id} [patch]
 func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		ph.logger.Printf("ERROR: change product active status: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	var req productRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		ph.logger.Printf("ERROR: change product active status: %v\n", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request body"})
+	var req models.ChangeProductStatusRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-
-	product := &store.Product{
+	if err = ph.productStore.ChangeProductActivateStatus(&models.Product{
 		ID:              id,
 		IsProductActive: req.IsProductActive,
-	}
-
-	err = ph.productStore.ChangeProductActivateStatus(product)
-	if err != nil {
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
+			return
+		}
 		ph.logger.Printf("ERROR: change product active status: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product status changed successfully"})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product status updated successfully"})
 }

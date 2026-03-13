@@ -2,325 +2,179 @@ package store
 
 import (
 	"database/sql"
-	"time"
-)
 
-type RFQ struct {
-	ID                     string    `json:"id"`
-	BusinessID             string    `json:"business_id"`
-	BusinessName           string    `json:"business_name"`
-	BusinessPhone          string    `json:"business_phone"`
-	BusinessEmail          string    `json:"business_email"`
-	Address                string    `json:"address"`
-	City                   string    `json:"city"`
-	State                  string    `json:"state"`
-	CategoryID             string    `json:"category_id,omitempty"`
-	SubCategoryID          string    `json:"sub_category_id,omitempty"`
-	CategoryName           string    `json:"category_name,omitempty"`
-	SubCategoryName        string    `json:"sub_category_name,omitempty"`
-	CategoryDescription    string    `json:"category_description,omitempty"`
-	SubCategoryDescription string    `json:"sub_category_description,omitempty"`
-	ProductName            string    `json:"product_name"`
-	Quantity               float64   `json:"quantity"`
-	Unit                   string    `json:"unit"`
-	Price                  float64   `json:"price"`
-	IsRFQActive            bool      `json:"is_rfq_active"`
-	CreatedAT              time.Time `json:"created_at"`
-	UpdatedAT              time.Time `json:"updated_at"`
-}
+	"github.com/shubhangcs/agromart-server/internal/models"
+	"github.com/shubhangcs/agromart-server/internal/utils"
+)
 
 type PostgresRFQStore struct {
 	db *sql.DB
 }
 
 type RFQStore interface {
-	CreateRFQ(*RFQ) error
-	ActivateRFQ(*RFQ) error
-	UpdateRFQ(*RFQ) error
+	CreateRFQ(*models.RFQ) error
+	ActivateRFQ(*models.RFQ) error
+	UpdateRFQ(*models.RFQ) error
 	DeleteRFQ(id string) error
-	GetAllRFQ() ([]RFQ, error)
-	GetRFQByBusinessID(id string) ([]RFQ, error)
+	GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQ, error)
+	GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQ, error)
 }
 
 func NewPostgresRFQStore(db *sql.DB) *PostgresRFQStore {
-	return &PostgresRFQStore{
-		db: db,
-	}
+	return &PostgresRFQStore{db: db}
 }
 
-func (rs *PostgresRFQStore) CreateRFQ(r *RFQ) error {
+func (rs *PostgresRFQStore) CreateRFQ(r *models.RFQ) error {
 	query := `
-	INSERT INTO rfqs (
-		business_id,
-		category_id,
-		sub_category_id,
-		product_name,
-		quantity,
-		unit,
-		price,
-		is_rfq_active
-	) VALUES (
-		$1, $2, $3, $4, $5, $6, $7, $8 
-	);
+	INSERT INTO rfqs (business_id, category_id, sub_category_id, product_name, quantity, unit, price, is_rfq_active)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+	RETURNING id, created_at, updated_at
 	`
-
-	res, err := rs.db.Exec(
+	return rs.db.QueryRow(
 		query,
-		r.BusinessID,
-		r.CategoryID,
-		r.SubCategoryID,
-		r.ProductName,
-		r.Quantity,
-		r.Unit,
-		r.Price,
-		r.IsRFQActive,
+		r.BusinessID, r.CategoryID, r.SubCategoryID,
+		r.ProductName, r.Quantity, r.Unit, r.Price, r.IsRFQActive,
+	).Scan(&r.ID, &r.CreatedAT, &r.UpdatedAT)
+}
+
+func (rs *PostgresRFQStore) ActivateRFQ(r *models.RFQ) error {
+	res, err := rs.db.Exec(
+		`UPDATE rfqs SET is_rfq_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+		r.IsRFQActive, r.ID,
 	)
-
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
-func (rs *PostgresRFQStore) ActivateRFQ(r *RFQ) error {
+func (rs *PostgresRFQStore) UpdateRFQ(r *models.RFQ) error {
 	query := `
 	UPDATE rfqs
-	SET is_rfq_active = $1,
-	updated_at = CURRENT_TIMESTAMP
-	WHERE id = $2;
+	SET category_id     = COALESCE(NULLIF($1,''), category_id::text)::uuid,
+	    sub_category_id = COALESCE(NULLIF($2,''), sub_category_id::text)::uuid,
+	    product_name    = COALESCE(NULLIF($3,''), product_name),
+	    quantity        = COALESCE(NULLIF($4,0),  quantity),
+	    unit            = COALESCE(NULLIF($5,''), unit),
+	    price           = COALESCE(NULLIF($6,0),  price),
+	    updated_at      = CURRENT_TIMESTAMP
+	WHERE id = $7
 	`
-
-	res, err := rs.db.Exec(query, r.IsRFQActive, r.ID)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
-}
-
-func (rs *PostgresRFQStore) UpdateRFQ(r *RFQ) error {
-	query := `
-	UPDATE rfqs 
-	SET category_id = COALESCE($1, category_id),
-	sub_category_id = COALESCE($2, sub_category_id),
-	product_name = COALESCE($3, product_name),
-	quantity = COALESCE($4, quantity),
-	unit = COALESCE($5, unit),
-	price = COALESCE($6, price),
-	updated_at = CURRENT_TIMESTAMP
-	WHERE id = $7;
-	`
-
-	res, err := rs.db.Exec(
-		query,
-		r.CategoryID,
-		r.SubCategoryID,
-		r.ProductName,
-		r.Quantity,
-		r.Unit,
-		r.Price,
-		r.ID,
+	res, err := rs.db.Exec(query,
+		r.CategoryID, r.SubCategoryID, r.ProductName,
+		r.Quantity, r.Unit, r.Price, r.ID,
 	)
-
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
 func (rs *PostgresRFQStore) DeleteRFQ(id string) error {
-	query := `
-	DELETE FROM rfqs
-	WHERE id = $1;
-	`
-
-	res, err := rs.db.Exec(query, id)
+	res, err := rs.db.Exec(`DELETE FROM rfqs WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
-func (rs *PostgresRFQStore) GetAllRFQ() ([]RFQ, error) {
+// GetAllRFQ returns active RFQs with business and category details, paginated.
+// Optional filters: product name search (?q=), city, and state.
+func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQ, error) {
 	query := `
 	SELECT
-		r.id,
-		b.id,
-		b.business_name,
-		b.business_email,
-		b.business_phone,
-		b.address,
-		b.city,
-		b.state,
-		c.id,
-		c.name,
-		c.description,
-		sc.id,
-		sc.name,
-		sc.description,
-		r.product_name,
-		r.quantity,
-		r.unit,
-		r.price,
-		r.is_rfq_active,
-		r.created_at,
-		r.updated_at
+		r.id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
+		c.id, c.name, c.description,
+		sc.id, sc.name, sc.description,
+		r.product_name, r.quantity, r.unit, r.price, r.is_rfq_active, r.created_at, r.updated_at
 	FROM rfqs r
-	JOIN businesses b
-		ON b.id = r.business_id
-	JOIN categories c
-		ON c.id = r.category_id
-	JOIN sub_categories sc
-		ON sc.id = r.sub_category_id
-	WHERE r.is_rfq_active = TRUE;
+	JOIN businesses b ON b.id = r.business_id
+	JOIN categories c ON c.id = r.category_id
+	JOIN sub_categories sc ON sc.id = r.sub_category_id
+	WHERE r.is_rfq_active = TRUE
+	  AND ($1 = '' OR r.product_name ILIKE '%' || $1 || '%')
+	  AND ($2 = '' OR b.city ILIKE $2)
+	  AND ($3 = '' OR b.state ILIKE $3)
+	ORDER BY r.created_at DESC
+	LIMIT $4 OFFSET $5
 	`
-
-	res, err := rs.db.Query(query)
+	rows, err := rs.db.Query(query, filter.ProductName, filter.City, filter.State, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Close()
+	defer rows.Close()
 
-	var rfqs []RFQ
-	for res.Next() {
-		var r RFQ
-		err = res.Scan(
-			&r.ID,
-			&r.BusinessID,
-			&r.BusinessName,
-			&r.BusinessEmail,
-			&r.BusinessPhone,
-			&r.Address,
-			&r.City,
-			&r.State,
-			&r.CategoryID,
-			&r.CategoryName,
-			&r.CategoryDescription,
-			&r.SubCategoryID,
-			&r.SubCategoryName,
-			&r.SubCategoryDescription,
-			&r.ProductName,
-			&r.Quantity,
-			&r.Unit,
-			&r.Price,
-			&r.IsRFQActive,
-			&r.CreatedAT,
-			&r.UpdatedAT,
+	var rfqs []models.RFQ
+	for rows.Next() {
+		var rfq models.RFQ
+		err = rows.Scan(
+			&rfq.ID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
+			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
+			&rfq.CategoryID, &rfq.CategoryName, &rfq.CategoryDescription,
+			&rfq.SubCategoryID, &rfq.SubCategoryName, &rfq.SubCategoryDescription,
+			&rfq.ProductName, &rfq.Quantity, &rfq.Unit, &rfq.Price,
+			&rfq.IsRFQActive, &rfq.CreatedAT, &rfq.UpdatedAT,
 		)
-
 		if err != nil {
 			return nil, err
 		}
-
-		rfqs = append(rfqs, r)
+		rfqs = append(rfqs, rfq)
 	}
-
-	if res.Err() != nil {
-		return nil, res.Err()
-	}
-
-	return rfqs, nil
+	return rfqs, rows.Err()
 }
 
-func (rs *PostgresRFQStore) GetRFQByBusinessID(id string) ([]RFQ, error) {
+// GetRFQByBusinessID returns all RFQs for a business (active and inactive), paginated.
+func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQ, error) {
 	query := `
 	SELECT
-		r.id,
-		b.id,
-		b.business_name,
-		b.business_email,
-		b.business_phone,
-		b.address,
-		b.city,
-		b.state,
-		r.product_name,
-		r.quantity,
-		r.unit,
-		r.price,
-		r.is_rfq_active,
-		r.created_at,
-		r.updated_at
+		r.id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
+		r.product_name, r.quantity, r.unit, r.price, r.is_rfq_active, r.created_at, r.updated_at
 	FROM rfqs r
-	JOIN businesses b
-		ON b.id = r.business_id
-	WHERE r.business_id = $1;
+	JOIN businesses b ON b.id = r.business_id
+	WHERE r.business_id = $1
+	ORDER BY r.created_at DESC
+	LIMIT $2 OFFSET $3
 	`
-	res, err := rs.db.Query(query, id)
+	rows, err := rs.db.Query(query, id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Close()
+	defer rows.Close()
 
-	var rfqs []RFQ
-	for res.Next() {
-		var r RFQ
-		err = res.Scan(
-			&r.ID,
-			&r.BusinessID,
-			&r.BusinessName,
-			&r.BusinessEmail,
-			&r.BusinessPhone,
-			&r.Address,
-			&r.City,
-			&r.State,
-			&r.ProductName,
-			&r.Quantity,
-			&r.Unit,
-			&r.Price,
-			&r.IsRFQActive,
-			&r.CreatedAT,
-			&r.UpdatedAT,
+	var rfqs []models.RFQ
+	for rows.Next() {
+		var rfq models.RFQ
+		err = rows.Scan(
+			&rfq.ID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
+			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
+			&rfq.ProductName, &rfq.Quantity, &rfq.Unit, &rfq.Price,
+			&rfq.IsRFQActive, &rfq.CreatedAT, &rfq.UpdatedAT,
 		)
-
 		if err != nil {
 			return nil, err
 		}
-
-		rfqs = append(rfqs, r)
+		rfqs = append(rfqs, rfq)
 	}
-
-	if res.Err() != nil {
-		return nil, res.Err()
-	}
-
-	return rfqs, nil
+	return rfqs, rows.Err()
 }

@@ -2,510 +2,315 @@ package store
 
 import (
 	"database/sql"
-	"errors"
-	"time"
 
-	"golang.org/x/crypto/bcrypt"
+	"github.com/shubhangcs/agromart-server/internal/models"
 )
-
-type password struct {
-	hash          []byte
-	plainPassword *string
-}
-
-func (p *password) Set(plainPassword string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(plainPassword), 12)
-	if err != nil {
-		return err
-	}
-	p.hash = hash
-	p.plainPassword = &plainPassword
-	return nil
-}
-
-func (p *password) Matches(plainPassword string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword(p.hash, []byte(plainPassword))
-	if err != nil {
-		switch {
-		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
-			return false, nil
-		default:
-			return false, err
-		}
-	}
-	return true, nil
-}
-
-type Admin struct {
-	ID           string    `json:"id"`
-	ProfileImage *string   `json:"profile_image"`
-	FirstName    string    `json:"first_name"`
-	LastName     *string   `json:"last_name"`
-	Email        string    `json:"email"`
-	Phone        string    `json:"phone"`
-	Password     password  `json:"-"`
-	CreatedAT    time.Time `json:"created_at"`
-	UpdatedAT    time.Time `json:"updated_at"`
-}
-
-type User struct {
-	ID            string    `json:"id"`
-	ProfileImage  *string   `json:"profile_image"`
-	FirstName     string    `json:"first_name"`
-	LastName      *string   `json:"last_name"`
-	Email         string    `json:"email"`
-	Phone         string    `json:"phone"`
-	Password      password  `json:"-"`
-	IsUserBlocked bool      `json:"is_user_blocked"`
-	IsUserSeller  bool      `json:"is_user_seller"`
-	CreatedAT     time.Time `json:"created_at"`
-	UpdatedAT     time.Time `json:"updated_at"`
-}
 
 type PostgresUserStore struct {
 	db *sql.DB
 }
 
 func NewPostgresUserStore(db *sql.DB) *PostgresUserStore {
-	return &PostgresUserStore{
-		db: db,
-	}
+	return &PostgresUserStore{db: db}
 }
 
 type UserStore interface {
-	CreateAdmin(*Admin) error
-	CreateUser(*User) error
-	GetAdminByEmail(string) (*Admin, error)
-	GetUserByEmail(string) (*User, error)
-	UpdateAdminDetails(*Admin) error
-	UpdateUserDetails(*User) error
-	UpdateAdminPassword(*Admin) error
-	UpdateUserPassword(*User) error
-	UpdateUserSellerStatus(*User) error
+	CreateAdmin(*models.Admin) error
+	CreateUser(*models.User) error
+	GetAdminByEmail(string) (*models.Admin, error)
+	GetUserByEmail(string) (*models.User, error)
+	UpdateAdminDetails(*models.Admin) error
+	UpdateUserDetails(*models.User) error
+	UpdateAdminPassword(*models.Admin) error
+	UpdateUserPassword(*models.User) error
+	UpdateUserSellerStatus(*models.User) error
 	DeleteAdmin(id string) error
 	DeleteUser(id string) error
-	GetAllUsers() ([]User, error)
-	BlockUser(*User) error
-	GetUserDetailsByID(id string) (*User, error)
-	GetAdminDetailsByID(id string) (*Admin, error)
+	GetAllUsers(limit, offset int) ([]models.User, error)
+	BlockUser(*models.User) error
+	GetUserDetailsByID(id string) (*models.User, error)
+	GetAdminDetailsByID(id string) (*models.Admin, error)
 }
 
-func (us *PostgresUserStore) CreateAdmin(admin *Admin) error {
+func (us *PostgresUserStore) CreateAdmin(admin *models.Admin) error {
 	query := `
-	INSERT INTO admins(first_name,last_name,email,phone,password_hash)
-	VALUES($1,$2,$3,$4,$5)
+	INSERT INTO admins(first_name, last_name, email, phone, password_hash)
+	VALUES($1, $2, $3, $4, $5)
 	RETURNING id, created_at, updated_at
 	`
-	err := us.db.QueryRow(
+	return us.db.QueryRow(
 		query,
-		admin.FirstName,
-		admin.LastName,
-		admin.Email,
-		admin.Phone,
-		string(admin.Password.hash),
-	).Scan(
-		&admin.ID,
-		&admin.CreatedAT,
-		&admin.UpdatedAT,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
+		admin.FirstName, admin.LastName, admin.Email, admin.Phone,
+		string(admin.Password.Hash),
+	).Scan(&admin.ID, &admin.CreatedAT, &admin.UpdatedAT)
 }
 
-func (us *PostgresUserStore) CreateUser(user *User) error {
+func (us *PostgresUserStore) CreateUser(user *models.User) error {
 	query := `
-	INSERT INTO users(first_name,last_name,email,phone,password_hash)
-	VALUES($1,$2,$3,$4,$5)
+	INSERT INTO users(first_name, last_name, email, phone, password_hash)
+	VALUES($1, $2, $3, $4, $5)
 	RETURNING id, created_at, updated_at
 	`
-	err := us.db.QueryRow(
+	return us.db.QueryRow(
 		query,
-		user.FirstName,
-		user.LastName,
-		user.Email,
-		user.Phone,
-		string(user.Password.hash),
-	).Scan(
-		&user.ID,
-		&user.CreatedAT,
-		&user.UpdatedAT,
-	)
-
-	if err != nil {
-		return err
-	}
-	return nil
+		user.FirstName, user.LastName, user.Email, user.Phone,
+		string(user.Password.Hash),
+	).Scan(&user.ID, &user.CreatedAT, &user.UpdatedAT)
 }
 
-func (us *PostgresUserStore) GetAdminByEmail(email string) (*Admin, error) {
-
-	var admin Admin
-
+func (us *PostgresUserStore) GetAdminByEmail(email string) (*models.Admin, error) {
 	query := `
-	SELECT id,profile_image,first_name,last_name,email,phone,password_hash,created_at,updated_at
+	SELECT id, profile_image, first_name, last_name, email, phone, password_hash, created_at, updated_at
 	FROM admins
-	WHERE email=$1
+	WHERE email = $1
 	`
-
+	var admin models.Admin
 	err := us.db.QueryRow(query, email).Scan(
-		&admin.ID,
-		&admin.ProfileImage,
-		&admin.FirstName,
-		&admin.LastName,
-		&admin.Email,
-		&admin.Phone,
-		&admin.Password.hash,
-		&admin.CreatedAT,
-		&admin.UpdatedAT,
+		&admin.ID, &admin.ProfileImage, &admin.FirstName, &admin.LastName,
+		&admin.Email, &admin.Phone, &admin.Password.Hash,
+		&admin.CreatedAT, &admin.UpdatedAT,
 	)
-
 	if err != nil {
 		return nil, err
 	}
-
 	return &admin, nil
 }
 
-func (us *PostgresUserStore) GetUserByEmail(email string) (*User, error) {
-	var user User
-
+func (us *PostgresUserStore) GetUserByEmail(email string) (*models.User, error) {
 	query := `
-	SELECT id,profile_image,first_name,last_name,email,phone,password_hash,created_at,updated_at
+	SELECT id, profile_image, first_name, last_name, email, phone, password_hash, created_at, updated_at
 	FROM users
-	WHERE email=$1
+	WHERE email = $1
 	`
-
+	var user models.User
 	err := us.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.ProfileImage,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.Phone,
-		&user.Password.hash,
-		&user.CreatedAT,
-		&user.UpdatedAT,
+		&user.ID, &user.ProfileImage, &user.FirstName, &user.LastName,
+		&user.Email, &user.Phone, &user.Password.Hash,
+		&user.CreatedAT, &user.UpdatedAT,
 	)
-
 	if err != nil {
 		return nil, err
 	}
-
 	return &user, nil
 }
 
-func (us *PostgresUserStore) UpdateAdminDetails(admin *Admin) error {
+func (us *PostgresUserStore) UpdateAdminDetails(admin *models.Admin) error {
 	query := `
-	UPDATE admins 
-	SET first_name = COALESCE($1,first_name),
-	last_name = COALESCE($2,last_name),
-	email = COALESCE($3,email),
-	phone = COALESCE($4,phone),
-	updated_at = CURRENT_TIMESTAMP
-	WHERE id=$5
+	UPDATE admins
+	SET first_name  = COALESCE(NULLIF($1, ''), first_name),
+	    last_name   = COALESCE(NULLIF($2, ''), last_name),
+	    email       = COALESCE(NULLIF($3, ''), email),
+	    phone       = COALESCE(NULLIF($4, ''), phone),
+	    updated_at  = CURRENT_TIMESTAMP
+	WHERE id = $5
 	`
-
 	res, err := us.db.Exec(query, admin.FirstName, admin.LastName, admin.Email, admin.Phone, admin.ID)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
-func (us *PostgresUserStore) UpdateUserDetails(user *User) error {
+func (us *PostgresUserStore) UpdateUserDetails(user *models.User) error {
 	query := `
 	UPDATE users
-	SET first_name = COALESCE($1, first_name),
-	last_name = COALESCE($2, last_name),
-	email = COALESCE($3, email),
-	phone = COALESCE($4, phone)
+	SET first_name  = COALESCE(NULLIF($1, ''), first_name),
+	    last_name   = COALESCE(NULLIF($2, ''), last_name),
+	    email       = COALESCE(NULLIF($3, ''), email),
+	    phone       = COALESCE(NULLIF($4, ''), phone),
+	    updated_at  = CURRENT_TIMESTAMP
 	WHERE id = $5
 	`
-
 	res, err := us.db.Exec(query, user.FirstName, user.LastName, user.Email, user.Phone, user.ID)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
+	return nil
+}
 
+func (us *PostgresUserStore) UpdateAdminPassword(admin *models.Admin) error {
+	query := `UPDATE admins SET password_hash = $1 WHERE id = $2`
+	res, err := us.db.Exec(query, string(admin.Password.Hash), admin.ID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (us *PostgresUserStore) UpdateUserPassword(user *models.User) error {
+	query := `UPDATE users SET password_hash = $1 WHERE id = $2`
+	res, err := us.db.Exec(query, string(user.Password.Hash), user.ID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (us *PostgresUserStore) UpdateUserSellerStatus(user *models.User) error {
+	query := `
+	UPDATE users
+	SET is_user_seller = $1,
+	    updated_at     = CURRENT_TIMESTAMP
+	WHERE id = $2
+	`
+	res, err := us.db.Exec(query, user.IsUserSeller, user.ID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
 	return nil
 }
 
 func (us *PostgresUserStore) DeleteAdmin(id string) error {
-	query := `
-	DELETE FROM admins
-	WHERE id = $1
-	`
-
-	res, err := us.db.Exec(query, id)
+	res, err := us.db.Exec(`DELETE FROM admins WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
 func (us *PostgresUserStore) DeleteUser(id string) error {
-	query := `
-	DELETE FROM users
-	WHERE id = $1
-	`
-
-	res, err := us.db.Exec(query, id)
+	res, err := us.db.Exec(`DELETE FROM users WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
-func (us *PostgresUserStore) UpdateAdminPassword(admin *Admin) error {
+// GetAllUsers returns a paginated list of users (without password hashes).
+func (us *PostgresUserStore) GetAllUsers(limit, offset int) ([]models.User, error) {
 	query := `
-	UPDATE admins
-	SET password_hash = $1
-	WHERE id = $2
-	`
-
-	res, err := us.db.Exec(query, string(admin.Password.hash), admin.ID)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
-}
-
-func (us *PostgresUserStore) UpdateUserPassword(user *User) error {
-	query := `
-	UPDATE users
-	SET password_hash = $1
-	WHERE id = $2
-	`
-
-	res, err := us.db.Exec(query, string(user.Password.hash), user.ID)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
-}
-
-func (us *PostgresUserStore) GetAllUsers() ([]User, error) {
-	query := `
-	SELECT id, profile_image, first_name, last_name, email, phone, is_user_seller , is_user_blocked, created_at, updated_at
+	SELECT id, profile_image, first_name, last_name, email, phone,
+	       is_user_seller, is_user_blocked, created_at, updated_at
 	FROM users
+	ORDER BY created_at DESC
+	LIMIT $1 OFFSET $2
 	`
-	res, err := us.db.Query(query)
+	rows, err := us.db.Query(query, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Close()
+	defer rows.Close()
 
-	var users []User
-	for res.Next() {
-		var user User
-		err = res.Scan(
-			&user.ID,
-			&user.ProfileImage,
-			&user.FirstName,
-			&user.LastName,
-			&user.Email,
-			&user.Phone,
-			&user.IsUserBlocked,
-			&user.IsUserSeller,
-			&user.CreatedAT,
-			&user.UpdatedAT,
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		err = rows.Scan(
+			&u.ID, &u.ProfileImage, &u.FirstName, &u.LastName,
+			&u.Email, &u.Phone,
+			&u.IsUserSeller, &u.IsUserBlocked, // order matches query
+			&u.CreatedAT, &u.UpdatedAT,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		users = append(users, user)
+		users = append(users, u)
 	}
-
-	if res.Err() != nil {
-		return nil, res.Err()
-	}
-
-	return users, nil
+	return users, rows.Err()
 }
 
-func (us *PostgresUserStore) BlockUser(user *User) error {
+func (us *PostgresUserStore) BlockUser(user *models.User) error {
 	query := `
-	UPDATE users 
+	UPDATE users
 	SET is_user_blocked = $1,
-	updated_at = CURRENT_TIMESTAMP
+	    updated_at      = CURRENT_TIMESTAMP
 	WHERE id = $2
 	`
 	res, err := us.db.Exec(query, user.IsUserBlocked, user.ID)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-
-	if rowsAffected == 0 {
+	if rows == 0 {
 		return sql.ErrNoRows
 	}
-
 	return nil
 }
 
-func (us *PostgresUserStore) UpdateUserSellerStatus(user *User) error {
+func (us *PostgresUserStore) GetUserDetailsByID(id string) (*models.User, error) {
 	query := `
-	UPDATE users 
-	SET is_user_seller = $1,
-	updated_at = CURRENT_TIMESTAMP,
-	WHERE id = $2
-	`
-
-	res, err := us.db.Exec(query, user.IsUserSeller, user.ID)
-	if err != nil {
-		return err
-	}
-
-	rowsAffecetd, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffecetd == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
-}
-
-func (us *PostgresUserStore) GetUserDetailsByID(id string) (*User, error) {
-	query := `
-	SELECT 
-		id,
-		profile_image,
-		first_name,
-		last_name,
-		email,
-		phone,
-		created_at,
-		updated_at,
-		is_user_blocked,
-		is_user_seller
+	SELECT id, profile_image, first_name, last_name, email, phone,
+	       is_user_seller, is_user_blocked, created_at, updated_at
 	FROM users
-	WHERE id = $1;
+	WHERE id = $1
 	`
-	var user User
-	err := us.db.QueryRow(
-		query,
-		id,
-	).Scan(
-		&user.ID,
-		&user.ProfileImage,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.Phone,
-		&user.CreatedAT,
-		&user.UpdatedAT,
-		&user.IsUserBlocked,
-		&user.IsUserSeller,
+	var u models.User
+	err := us.db.QueryRow(query, id).Scan(
+		&u.ID, &u.ProfileImage, &u.FirstName, &u.LastName,
+		&u.Email, &u.Phone,
+		&u.IsUserSeller, &u.IsUserBlocked,
+		&u.CreatedAT, &u.UpdatedAT,
 	)
-
 	if err != nil {
 		return nil, err
 	}
-
-	return &user, nil
+	return &u, nil
 }
 
-func (us *PostgresUserStore) GetAdminDetailsByID(id string) (*Admin, error) {
+func (us *PostgresUserStore) GetAdminDetailsByID(id string) (*models.Admin, error) {
 	query := `
-	SELECT 
-		id,
-		profile_image,
-		first_name,
-		last_name,
-		email,
-		phone,
-		created_at,
-		updated_at
+	SELECT id, profile_image, first_name, last_name, email, phone, created_at, updated_at
 	FROM admins
-	WHERE id = $1;
+	WHERE id = $1
 	`
-	var user Admin
-	err := us.db.QueryRow(
-		query,
-		id,
-	).Scan(
-		&user.ID,
-		&user.ProfileImage,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.Phone,
-		&user.CreatedAT,
-		&user.UpdatedAT,
+	var a models.Admin
+	err := us.db.QueryRow(query, id).Scan(
+		&a.ID, &a.ProfileImage, &a.FirstName, &a.LastName,
+		&a.Email, &a.Phone, &a.CreatedAT, &a.UpdatedAT,
 	)
-
 	if err != nil {
 		return nil, err
 	}
-
-	return &user, nil
+	return &a, nil
 }

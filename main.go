@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/shubhangcs/agromart-server/internal/app"
@@ -12,33 +16,59 @@ import (
 
 // @title           Agromart API
 // @version         1.0
-// @description     Agromart backend server
+// @description     Agromart B2B agricultural marketplace backend server.
 // @host            localhost:8080
-
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	var port int
-	flag.IntVar(&port, "port", 8080, "specify server port")
+	flag.IntVar(&port, "port", 8080, "server port")
 	flag.Parse()
 
-	app, err := app.NewApplication()
+	application, err := app.NewApplication()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "failed to initialise application: %v\n", err)
+		os.Exit(1)
 	}
-	defer app.DB.Close()
-	r := routes.SetupRoutes(app)
+	defer application.DB.Close()
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      r,
+		Handler:      routes.SetupRoutes(application),
 		IdleTimeout:  time.Minute,
-		ReadTimeout:  time.Second * 10,
-		WriteTimeout: time.Second * 30,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
 
-	app.Logger.Printf("server is running on port: %d\n", port)
+	// Channel to receive OS shutdown signals.
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	err = server.ListenAndServe()
-	if err != nil {
-		app.Logger.Fatalln("failed to start server:", err)
+	// Start server in a goroutine so we can listen for signals concurrently.
+	serverErr := make(chan error, 1)
+	go func() {
+		application.Logger.Printf("INFO: server listening on port %d\n", port)
+		serverErr <- server.ListenAndServe()
+	}()
+
+	// Block until a signal or a fatal server error arrives.
+	select {
+	case err = <-serverErr:
+		if err != nil && err != http.ErrServerClosed {
+			application.Logger.Fatalf("ERROR: server error: %v\n", err)
+		}
+	case sig := <-quit:
+		application.Logger.Printf("INFO: received signal %s — shutting down gracefully\n", sig)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		if err = server.Shutdown(ctx); err != nil {
+			application.Logger.Printf("ERROR: graceful shutdown failed: %v\n", err)
+		} else {
+			application.Logger.Println("INFO: server stopped cleanly")
+		}
 	}
 }

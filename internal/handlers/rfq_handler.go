@@ -1,36 +1,18 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
-	"time"
 
+	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 )
 
-// rfqRequest represents the RFQ payload
-type rfqRequest struct {
-	ID            string    `json:"id"              example:"rfq-uuid-001"`
-	BusinessID    string    `json:"business_id"     example:"biz-uuid-001"`
-	CategoryID    string    `json:"category_id"     example:"cat-uuid-001"`
-	SubCategoryID string    `json:"sub_category_id" example:"subcat-uuid-001"`
-	ProductName   string    `json:"product_name"    example:"Wheat"`
-	Quantity      float64   `json:"quantity"        example:"500"`
-	Unit          string    `json:"unit"            example:"kg"`
-	Price         float64   `json:"price"           example:"1200.50"`
-	IsRFQActive   bool      `json:"is_rfq_active"   example:"true"`
-	CreatedAT     time.Time `json:"created_at"`
-	UpdatedAT     time.Time `json:"updated_at"`
-}
-
-// activateRFQRequest is used to toggle RFQ active status
-type activateRFQRequest struct {
-	IsRFQActive bool `json:"is_rfq_active" example:"true"`
-}
-
+// RFQHandler handles all RFQ-related HTTP requests.
 type RFQHandler struct {
 	rfqStore store.RFQStore
 	logger   *log.Logger
@@ -43,27 +25,27 @@ func NewRFQHandler(rfqStore store.RFQStore, logger *log.Logger) *RFQHandler {
 	}
 }
 
-func (rh *RFQHandler) validateCreateRFQ(req *rfqRequest) error {
+func (rh *RFQHandler) validateCreateRFQ(req *models.CreateRFQRequest) error {
 	if req.BusinessID == "" {
-		return errors.New("invalid request business id is required")
+		return errors.New("business_id is required")
 	}
 	if req.CategoryID == "" {
-		return errors.New("invalid request category id is required")
+		return errors.New("category_id is required")
 	}
 	if req.SubCategoryID == "" {
-		return errors.New("invalid request sub category id is required")
+		return errors.New("sub_category_id is required")
 	}
 	if req.ProductName == "" {
-		return errors.New("invalid request product name is required")
+		return errors.New("product_name is required")
 	}
-	if req.Quantity == 0 {
-		return errors.New("invalid request product quantity is required")
+	if req.Quantity <= 0 {
+		return errors.New("quantity must be greater than zero")
 	}
 	if req.Unit == "" {
-		return errors.New("invalid request unit is required")
+		return errors.New("unit is required")
 	}
-	if req.Price == 0 {
-		return errors.New("invalid request product price is required")
+	if req.Price <= 0 {
+		return errors.New("price must be greater than zero")
 	}
 	return nil
 }
@@ -74,28 +56,23 @@ func (rh *RFQHandler) validateCreateRFQ(req *rfqRequest) error {
 // @Tags         rfq
 // @Accept       json
 // @Produce      json
-// @Param        body body rfqRequest true "RFQ creation payload"
-// @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse "Invalid payload or missing required fields"
-// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Param        body body models.CreateRFQRequest true "RFQ creation payload"
+// @Success      201 {object} map[string]interface{} "rfq_id returned"
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
 // @Router       /rfq/create [post]
 func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
-	var req rfqRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	var req models.CreateRFQRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		rh.logger.Printf("ERROR: create rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-
-	err = rh.validateCreateRFQ(&req)
-	if err != nil {
-		rh.logger.Printf("ERROR: create rfq: %v\n", err)
+	if err := rh.validateCreateRFQ(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	rfq := &store.RFQ{
+	rfq := &models.RFQ{
 		BusinessID:    req.BusinessID,
 		CategoryID:    req.CategoryID,
 		SubCategoryID: req.SubCategoryID,
@@ -105,15 +82,12 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 		Price:         req.Price,
 		IsRFQActive:   req.IsRFQActive,
 	}
-
-	err = rh.rfqStore.CreateRFQ(rfq)
-	if err != nil {
+	if err := rh.rfqStore.CreateRFQ(rfq); err != nil {
 		rh.logger.Printf("ERROR: create rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq created successfully"})
+	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "rfq created successfully", "rfq_id": rfq.ID})
 }
 
 // HandleActivateRFQ godoc
@@ -122,41 +96,35 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 // @Tags         rfq
 // @Accept       json
 // @Produce      json
-// @Param        id   path int                true "RFQ ID"
-// @Param        body body activateRFQRequest true "RFQ active status payload"
+// @Param        id   path  string                    true "RFQ ID"
+// @Param        body body  models.ActivateRFQRequest true "RFQ active status payload"
 // @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse "Invalid ID or payload"
-// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
 // @Router       /rfq/update/status/{id} [put]
 func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		rh.logger.Printf("ERROR: activate rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	var req rfqRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	var req models.ActivateRFQRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		rh.logger.Printf("ERROR: activate rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-
-	rfq := &store.RFQ{
-		ID:          id,
-		IsRFQActive: req.IsRFQActive,
-	}
-
-	err = rh.rfqStore.ActivateRFQ(rfq)
-	if err != nil {
+	if err = rh.rfqStore.ActivateRFQ(&models.RFQ{ID: id, IsRFQActive: req.IsRFQActive}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
+			return
+		}
 		rh.logger.Printf("ERROR: activate rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq status changed successfully"})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq status updated successfully"})
 }
 
 // HandleUpdateRFQ godoc
@@ -165,29 +133,26 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 // @Tags         rfq
 // @Accept       json
 // @Produce      json
-// @Param        id   path int        true "RFQ ID"
-// @Param        body body rfqRequest true "RFQ update payload"
+// @Param        id   path  string                  true "RFQ ID"
+// @Param        body body  models.UpdateRFQRequest true "RFQ update payload"
 // @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse "Invalid ID or payload"
-// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
 // @Router       /rfq/update/{id} [put]
 func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		rh.logger.Printf("ERROR: update rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	var req rfqRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	var req models.UpdateRFQRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		rh.logger.Printf("ERROR: update rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-
-	rfq := &store.RFQ{
+	if err = rh.rfqStore.UpdateRFQ(&models.RFQ{
 		ID:            id,
 		CategoryID:    req.CategoryID,
 		SubCategoryID: req.SubCategoryID,
@@ -195,15 +160,15 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 		Quantity:      req.Quantity,
 		Price:         req.Price,
 		Unit:          req.Unit,
-	}
-
-	err = rh.rfqStore.UpdateRFQ(rfq)
-	if err != nil {
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
+			return
+		}
 		rh.logger.Printf("ERROR: update rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq updated successfully"})
 }
 
@@ -212,72 +177,87 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 // @Description  Deletes the RFQ with the given ID
 // @Tags         rfq
 // @Produce      json
-// @Param        id path int true "RFQ ID"
+// @Param        id path string true "RFQ ID"
 // @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse "Invalid ID"
-// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
 // @Router       /rfq/delete/{id} [delete]
 func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		rh.logger.Printf("ERROR: delete rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	err = rh.rfqStore.DeleteRFQ(id)
-	if err != nil {
+	if err = rh.rfqStore.DeleteRFQ(id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
+			return
+		}
 		rh.logger.Printf("ERROR: delete rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq deleted successfully"})
 }
 
 // HandleGetAllRFQ godoc
 // @Summary      Get all RFQs
-// @Description  Returns a list of all RFQs across all businesses
+// @Description  Returns a paginated list of all RFQs across all businesses. Supports optional search and location filters.
 // @Tags         rfq
 // @Produce      json
-// @Success      200 {object} map[string]interface{} "list of rfqs"
-// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Param        page  query string false "Page number (default 1)"
+// @Param        limit query string false "Items per page (default 20, max 100)"
+// @Param        q     query string false "Search by product name (case-insensitive)"
+// @Param        city  query string false "Filter by business city (case-insensitive)"
+// @Param        state query string false "Filter by business state (case-insensitive)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      500 {object} ErrorResponse
 // @Router       /rfq/get/all [get]
 func (rh *RFQHandler) HandleGetAllRFQ(w http.ResponseWriter, r *http.Request) {
-	res, err := rh.rfqStore.GetAllRFQ()
+	pg := utils.ReadPaginationParams(r)
+	filter := utils.ReadRFQFilter(r)
+	res, err := rh.rfqStore.GetAllRFQ(filter, pg.Limit, pg.Offset())
 	if err != nil {
 		rh.logger.Printf("ERROR: get all rfq: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfqs fetched successfully", "rfqs": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "rfqs fetched successfully",
+		"rfqs":       res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }
 
 // HandleGetRFQByBusinessID godoc
 // @Summary      Get RFQs by business ID
-// @Description  Returns all RFQs belonging to the business with the given ID
+// @Description  Returns a paginated list of RFQs belonging to the given business
 // @Tags         rfq
 // @Produce      json
-// @Param        id path int true "Business ID"
-// @Success      200 {object} map[string]interface{} "list of rfqs"
-// @Failure      400 {object} ErrorResponse "Invalid ID"
-// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Param        id    path  string true  "Business ID"
+// @Param        page  query int    false "Page number (default 1)"
+// @Param        limit query int    false "Items per page (default 20, max 100)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
 // @Router       /rfq/get/{id} [get]
 func (rh *RFQHandler) HandleGetRFQByBusinessID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		rh.logger.Printf("ERROR: get rfq by business id: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-
-	res, err := rh.rfqStore.GetRFQByBusinessID(id)
+	pg := utils.ReadPaginationParams(r)
+	res, err := rh.rfqStore.GetRFQByBusinessID(id, pg.Limit, pg.Offset())
 	if err != nil {
 		rh.logger.Printf("ERROR: get rfq by business id: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfqs fetched successfully", "rfqs": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "rfqs fetched successfully",
+		"rfqs":       res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
+	})
 }

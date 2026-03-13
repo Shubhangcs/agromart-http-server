@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shubhangcs/agromart-server/internal/blob"
+	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 )
@@ -270,7 +271,7 @@ func (bh *BlobHandler) HandleUpdateProductImage(w http.ResponseWriter, r *http.R
 	}
 
 	var id = uuid.NewString()
-	productImage := &store.ProductImage{
+	productImage := &models.ProductImage{
 		ID:        id,
 		ProductID: req.ProductID,
 		Index:     req.Index,

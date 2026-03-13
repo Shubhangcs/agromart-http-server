@@ -1,24 +1,25 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"regexp"
 
+	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 )
 
 var (
-	emailRegx    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	emailRegx    = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 	passwordRegx = regexp.MustCompile(`^[A-Za-z\d@$!%*?&]{8,}$`)
 	phoneRegx    = regexp.MustCompile(`^\d{7,15}$`)
 )
 
-// registerUserRequest represents the payload for registering a user or admin
-// @Description Registration request body
+// registerUserRequest represents the payload for registering a user or admin.
 type registerUserRequest struct {
 	FirstName string `json:"first_name" example:"John"`
 	LastName  string `json:"last_name"  example:"Doe"`
@@ -27,7 +28,7 @@ type registerUserRequest struct {
 	Password  string `json:"password"   example:"StrongPass@1"`
 }
 
-// updateUserProfileDetailsRequest represents updatable profile fields
+// updateUserProfileDetailsRequest represents updatable profile fields.
 type updateUserProfileDetailsRequest struct {
 	FirstName string `json:"first_name" example:"John"`
 	LastName  string `json:"last_name"  example:"Doe"`
@@ -43,12 +44,12 @@ type blockUserRequest struct {
 	IsUserBlocked bool `json:"is_user_blocked" example:"true"`
 }
 
-// ErrorResponse is a generic error response
+// ErrorResponse is the generic error response body.
 type ErrorResponse struct {
 	Error string `json:"error" example:"internal server error"`
 }
 
-// MessageResponse is a generic success message response
+// MessageResponse is the generic success response body.
 type MessageResponse struct {
 	Message string `json:"message" example:"operation successful"`
 }
@@ -59,43 +60,38 @@ type UserHandler struct {
 }
 
 func NewUserHandler(userStore store.UserStore, logger *log.Logger) *UserHandler {
-	return &UserHandler{
-		userStore: userStore,
-		logger:    logger,
-	}
+	return &UserHandler{userStore: userStore, logger: logger}
 }
-
-// --- Validation helpers (unchanged) ---
 
 func (uh *UserHandler) validateRegisterRequest(req *registerUserRequest) error {
 	if req.FirstName == "" {
-		return errors.New("invalid request first name is required")
+		return errors.New("first name is required")
 	}
-	if !emailRegx.Match([]byte(req.Email)) {
-		return errors.New("invalid request incorrect email format")
+	if !emailRegx.MatchString(req.Email) {
+		return errors.New("invalid email address")
 	}
-	if !passwordRegx.Match([]byte(req.Password)) {
-		return errors.New("invalid request password is not strong")
+	if !passwordRegx.MatchString(req.Password) {
+		return errors.New("password must be at least 8 characters and contain letters, digits, or @$!%*?&")
 	}
-	if !phoneRegx.Match([]byte(req.Phone)) {
-		return errors.New("invalid request incorrect phone number")
+	if !phoneRegx.MatchString(req.Phone) {
+		return errors.New("phone number must be 7-15 digits")
 	}
 	return nil
 }
 
 func (uh *UserHandler) validateUpdateRequest(req *updateUserProfileDetailsRequest) error {
-	if req.Email != "" && !emailRegx.Match([]byte(req.Email)) {
-		return errors.New("invalid request incorrect email format")
+	if req.Email != "" && !emailRegx.MatchString(req.Email) {
+		return errors.New("invalid email address")
 	}
-	if req.Phone != "" && !phoneRegx.Match([]byte(req.Phone)) {
-		return errors.New("invalid request incorrect phone number")
+	if req.Phone != "" && !phoneRegx.MatchString(req.Phone) {
+		return errors.New("phone number must be 7-15 digits")
 	}
 	return nil
 }
 
 func (uh *UserHandler) validateUpdatePasswordRequest(req *updatePasswordRequest) error {
-	if !passwordRegx.Match([]byte(req.Password)) {
-		return errors.New("invalid request password is not strong")
+	if !passwordRegx.MatchString(req.Password) {
+		return errors.New("password must be at least 8 characters and contain letters, digits, or @$!%*?&")
 	}
 	return nil
 }
@@ -107,38 +103,35 @@ func (uh *UserHandler) validateUpdatePasswordRequest(req *updatePasswordRequest)
 // @Accept       json
 // @Produce      json
 // @Param        body body registerUserRequest true "Admin registration payload"
-// @Success      201 {object} map[string]interface{} "admin created successfully"
-// @Failure      500 {object} ErrorResponse
+// @Success      201 {object} map[string]string "admin created successfully"
+// @Failure      400 {object} ErrorResponse "Invalid payload or validation error"
+// @Failure      500 {object} ErrorResponse "Internal server error"
 // @Router       /admin/create [post]
 func (uh *UserHandler) HandleCreateAdmin(w http.ResponseWriter, r *http.Request) {
 	var req registerUserRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: decoding admin register request: %v\n", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "invalid request payload"})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		uh.logger.Printf("ERROR: create admin: %v\n", err)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	err = uh.validateRegisterRequest(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: validating admin register request: %v\n", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+	if err := uh.validateRegisterRequest(&req); err != nil {
+		uh.logger.Printf("ERROR: create admin: %v\n", err)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	admin := &store.Admin{
+	admin := &models.Admin{
 		FirstName: req.FirstName,
 		LastName:  &req.LastName,
 		Email:     req.Email,
 		Phone:     req.Phone,
 	}
-	err = admin.Password.Set(req.Password)
-	if err != nil {
-		uh.logger.Printf("ERROR: setting password in admin register request: %v\n", err)
+	if err := admin.Password.Set(req.Password); err != nil {
+		uh.logger.Printf("ERROR: create admin: hash password: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	err = uh.userStore.CreateAdmin(admin)
-	if err != nil {
-		uh.logger.Printf("ERROR: creating admin in admin register request: %v\n", err)
+	if err := uh.userStore.CreateAdmin(admin); err != nil {
+		uh.logger.Printf("ERROR: create admin: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create admin"})
 		return
 	}
@@ -152,39 +145,35 @@ func (uh *UserHandler) HandleCreateAdmin(w http.ResponseWriter, r *http.Request)
 // @Accept       json
 // @Produce      json
 // @Param        body body registerUserRequest true "User registration payload"
-// @Success      201 {object} map[string]interface{} "user created successfully"
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
+// @Success      201 {object} map[string]string "user created successfully"
+// @Failure      400 {object} ErrorResponse "Invalid payload or validation error"
+// @Failure      500 {object} ErrorResponse "Internal server error"
 // @Router       /user/create [post]
 func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var req registerUserRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: decoding user register request: %v\n", err)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		uh.logger.Printf("ERROR: create user: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	err = uh.validateRegisterRequest(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: validating user register request: %v\n", err)
+	if err := uh.validateRegisterRequest(&req); err != nil {
+		uh.logger.Printf("ERROR: create user: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	user := &store.User{
+	user := &models.User{
 		FirstName: req.FirstName,
 		LastName:  &req.LastName,
 		Email:     req.Email,
 		Phone:     req.Phone,
 	}
-	err = user.Password.Set(req.Password)
-	if err != nil {
-		uh.logger.Printf("ERROR: setting password in user register request: %v\n", err)
+	if err := user.Password.Set(req.Password); err != nil {
+		uh.logger.Printf("ERROR: create user: hash password: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	err = uh.userStore.CreateUser(user)
-	if err != nil {
-		uh.logger.Printf("ERROR: creating user in user register request: %v\n", err)
+	if err := uh.userStore.CreateUser(user); err != nil {
+		uh.logger.Printf("ERROR: create user: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create user"})
 		return
 	}
@@ -197,42 +186,36 @@ func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 // @Tags         admins
 // @Accept       json
 // @Produce      json
-// @Param        id   path int                            true "Admin ID"
-// @Param        body body updateUserProfileDetailsRequest true "Admin update payload"
-// @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
+// @Param        id   path      string                          true "Admin ID"
+// @Param        body body      updateUserProfileDetailsRequest true "Admin update payload"
+// @Success      200  {object}  MessageResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
 // @Router       /admin/update/details/{id} [put]
 func (uh *UserHandler) HandleUpdateAdminDetails(w http.ResponseWriter, r *http.Request) {
-	adminId, err := utils.ReadParamID(r)
+	adminID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: update admin profile details: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	var req updateUserProfileDetailsRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update admin profile details: %v\n", err)
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	err = uh.validateUpdateRequest(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update admin profile details: %v\n", err)
+	if err = uh.validateUpdateRequest(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	admin := &store.Admin{
-		ID:        adminId,
+	admin := &models.Admin{
+		ID:        adminID,
 		FirstName: req.FirstName,
 		LastName:  &req.LastName,
 		Email:     req.Email,
 		Phone:     req.Phone,
 	}
-	err = uh.userStore.UpdateAdminDetails(admin)
-	if err != nil {
-		uh.logger.Printf("ERROR: update admin profile details: %v\n", err)
+	if err = uh.userStore.UpdateAdminDetails(admin); err != nil {
+		uh.logger.Printf("ERROR: update admin details: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -245,42 +228,36 @@ func (uh *UserHandler) HandleUpdateAdminDetails(w http.ResponseWriter, r *http.R
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        id   path int                            true "User ID"
-// @Param        body body updateUserProfileDetailsRequest true "User update payload"
-// @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
+// @Param        id   path      string                          true "User ID"
+// @Param        body body      updateUserProfileDetailsRequest true "User update payload"
+// @Success      200  {object}  MessageResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
 // @Router       /user/update/details/{id} [put]
 func (uh *UserHandler) HandleUpdateUserDetails(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
+	userID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: update user profile details: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	var req updateUserProfileDetailsRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update user profile details: %v\n", err)
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	err = uh.validateUpdateRequest(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update user profile details: %v\n", err)
+	if err = uh.validateUpdateRequest(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	user := &store.User{
-		ID:        userId,
+	user := &models.User{
+		ID:        userID,
 		FirstName: req.FirstName,
 		LastName:  &req.LastName,
 		Email:     req.Email,
 		Phone:     req.Phone,
 	}
-	err = uh.userStore.UpdateUserDetails(user)
-	if err != nil {
-		uh.logger.Printf("ERROR: update user profile details: %v\n", err)
+	if err = uh.userStore.UpdateUserDetails(user); err != nil {
+		uh.logger.Printf("ERROR: update user details: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
@@ -293,41 +270,34 @@ func (uh *UserHandler) HandleUpdateUserDetails(w http.ResponseWriter, r *http.Re
 // @Tags         admins
 // @Accept       json
 // @Produce      json
-// @Param        id   path int                   true "Admin ID"
-// @Param        body body updatePasswordRequest true "New password payload"
-// @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
+// @Param        id   path      string                true "Admin ID"
+// @Param        body body      updatePasswordRequest true "New password payload"
+// @Success      200  {object}  MessageResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
 // @Router       /admin/update/password/{id} [put]
 func (uh *UserHandler) HandleUpdateAdminPassword(w http.ResponseWriter, r *http.Request) {
-	adminId, err := utils.ReadParamID(r)
+	adminID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: update admin password: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	var req updatePasswordRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update admin password: %v\n", err)
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	err = uh.validateUpdatePasswordRequest(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update admin password: %v\n", err)
+	if err = uh.validateUpdatePasswordRequest(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	admin := &store.Admin{ID: adminId}
-	err = admin.Password.Set(req.Password)
-	if err != nil {
+	admin := &models.Admin{ID: adminID}
+	if err = admin.Password.Set(req.Password); err != nil {
 		uh.logger.Printf("ERROR: update admin password: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	err = uh.userStore.UpdateAdminPassword(admin)
-	if err != nil {
+	if err = uh.userStore.UpdateAdminPassword(admin); err != nil {
 		uh.logger.Printf("ERROR: update admin password: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
@@ -341,41 +311,34 @@ func (uh *UserHandler) HandleUpdateAdminPassword(w http.ResponseWriter, r *http.
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        id   path int                   true "User ID"
-// @Param        body body updatePasswordRequest true "New password payload"
-// @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
+// @Param        id   path      string                true "User ID"
+// @Param        body body      updatePasswordRequest true "New password payload"
+// @Success      200  {object}  MessageResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
 // @Router       /user/update/password/{id} [put]
 func (uh *UserHandler) HandleUpdateUserPassword(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
+	userID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: update user password: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	var req updatePasswordRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update user password: %v\n", err)
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	err = uh.validateUpdatePasswordRequest(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: update user password: %v\n", err)
+	if err = uh.validateUpdatePasswordRequest(&req); err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	user := &store.User{ID: userId}
-	err = user.Password.Set(req.Password)
-	if err != nil {
+	user := &models.User{ID: userID}
+	if err = user.Password.Set(req.Password); err != nil {
 		uh.logger.Printf("ERROR: update user password: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	err = uh.userStore.UpdateUserPassword(user)
-	if err != nil {
+	if err = uh.userStore.UpdateUserPassword(user); err != nil {
 		uh.logger.Printf("ERROR: update user password: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
@@ -388,20 +351,23 @@ func (uh *UserHandler) HandleUpdateUserPassword(w http.ResponseWriter, r *http.R
 // @Description  Deletes the admin with the given ID
 // @Tags         admins
 // @Produce      json
-// @Param        id path int true "Admin ID"
+// @Param        id path string true "Admin ID"
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse "Admin not found"
 // @Failure      500 {object} ErrorResponse
 // @Router       /admin/delete/{id} [delete]
 func (uh *UserHandler) HandleDeleteAdmin(w http.ResponseWriter, r *http.Request) {
-	adminId, err := utils.ReadParamID(r)
+	adminID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: delete admin: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	err = uh.userStore.DeleteAdmin(adminId)
-	if err != nil {
+	if err = uh.userStore.DeleteAdmin(adminID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "admin not found"})
+			return
+		}
 		uh.logger.Printf("ERROR: delete admin: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
@@ -414,20 +380,23 @@ func (uh *UserHandler) HandleDeleteAdmin(w http.ResponseWriter, r *http.Request)
 // @Description  Deletes the user with the given ID
 // @Tags         users
 // @Produce      json
-// @Param        id path int true "User ID"
+// @Param        id path string true "User ID"
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse "User not found"
 // @Failure      500 {object} ErrorResponse
 // @Router       /user/delete/{id} [delete]
 func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
+	userID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: delete user: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	err = uh.userStore.DeleteUser(userId)
-	if err != nil {
+	if err = uh.userStore.DeleteUser(userID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "user not found"})
+			return
+		}
 		uh.logger.Printf("ERROR: delete user: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
@@ -437,20 +406,30 @@ func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) 
 
 // HandleGetAllUsers godoc
 // @Summary      Get all users
-// @Description  Returns a list of all registered users
+// @Description  Returns a paginated list of all registered users
 // @Tags         users
 // @Produce      json
+// @Param        page  query int false "Page number (default: 1)"
+// @Param        limit query int false "Items per page, max 100 (default: 20)"
 // @Success      200 {object} map[string]interface{} "list of users"
 // @Failure      500 {object} ErrorResponse
 // @Router       /user/get/all [get]
 func (uh *UserHandler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request) {
-	res, err := uh.userStore.GetAllUsers()
+	pg := utils.ReadPaginationParams(r)
+	users, err := uh.userStore.GetAllUsers(pg.Limit, pg.Offset())
 	if err != nil {
 		uh.logger.Printf("ERROR: get all users: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"users": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message": "users fetched successfully",
+		"users":   users,
+		"pagination": map[string]int{
+			"page":  pg.Page,
+			"limit": pg.Limit,
+		},
+	})
 }
 
 // HandleBlockUser godoc
@@ -459,32 +438,24 @@ func (uh *UserHandler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request)
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        id   path int              true "User ID"
-// @Param        body body blockUserRequest true "Block status payload"
-// @Success      200 {object} MessageResponse
-// @Failure      400 {object} ErrorResponse
-// @Failure      500 {object} ErrorResponse
+// @Param        id   path      string           true "User ID"
+// @Param        body body      blockUserRequest true "Block status payload"
+// @Success      200  {object}  MessageResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
 // @Router       /user/block/{id} [put]
 func (uh *UserHandler) HandleBlockUser(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
+	userID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: block users: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
 	var req blockUserRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		uh.logger.Printf("ERROR: block user: %v\n", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request body"})
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
 		return
 	}
-	user := &store.User{
-		ID:            userId,
-		IsUserBlocked: req.IsUserBlocked,
-	}
-	err = uh.userStore.BlockUser(user)
-	if err != nil {
+	if err = uh.userStore.BlockUser(&models.User{ID: userID, IsUserBlocked: req.IsUserBlocked}); err != nil {
 		uh.logger.Printf("ERROR: block user: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
@@ -497,39 +468,57 @@ func (uh *UserHandler) HandleBlockUser(w http.ResponseWriter, r *http.Request) {
 // @Description  Returns the details of the user with the given ID
 // @Tags         users
 // @Produce      json
-// @Param        id path int true "User ID"
+// @Param        id path string true "User ID"
 // @Success      200 {object} map[string]interface{} "user details"
 // @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse "User not found"
 // @Failure      500 {object} ErrorResponse
 // @Router       /user/get/user/{id} [get]
 func (uh *UserHandler) HandleGetUserDetailsByID(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
+	userID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: get user details by id: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	res, err := uh.userStore.GetUserDetailsByID(userId)
+	user, err := uh.userStore.GetUserDetailsByID(userID)
 	if err != nil {
-		uh.logger.Printf("ERROR: get user details by id: %v\n", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "user not found"})
+			return
+		}
+		uh.logger.Printf("ERROR: get user details: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "user details fetched successfully", "user": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "user details fetched successfully", "user": user})
 }
 
+// HandleGetAdminDetailsByID godoc
+// @Summary      Get admin details by ID
+// @Description  Returns the details of the admin with the given ID
+// @Tags         admins
+// @Produce      json
+// @Param        id path string true "Admin ID"
+// @Success      200 {object} map[string]interface{} "admin details"
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse "Admin not found"
+// @Failure      500 {object} ErrorResponse
+// @Router       /admin/get/admin/{id} [get]
 func (uh *UserHandler) HandleGetAdminDetailsByID(w http.ResponseWriter, r *http.Request) {
-	adminId, err := utils.ReadParamID(r)
+	adminID, err := utils.ReadParamID(r)
 	if err != nil {
-		uh.logger.Printf("ERROR: get admin details by id: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
 		return
 	}
-	res, err := uh.userStore.GetAdminDetailsByID(adminId)
+	admin, err := uh.userStore.GetAdminDetailsByID(adminID)
 	if err != nil {
-		uh.logger.Printf("ERROR: get admin details by id: %v\n", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "admin not found"})
+			return
+		}
+		uh.logger.Printf("ERROR: get admin details: %v\n", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "admin details fetched successfully", "user": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "admin details fetched successfully", "admin": admin})
 }
