@@ -44,11 +44,19 @@ const docTemplate = `{
                         "description": "admin created successfully",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": true
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -68,7 +76,7 @@ const docTemplate = `{
                 "summary": "Delete admin",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Admin ID",
                         "name": "id",
                         "in": "path",
@@ -88,6 +96,60 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "Admin not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/get/admin/{id}": {
+            "get": {
+                "description": "Returns the details of the admin with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admins"
+                ],
+                "summary": "Get admin details by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "admin details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Admin not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -99,7 +161,7 @@ const docTemplate = `{
         },
         "/admin/login": {
             "post": {
-                "description": "Authenticates an admin using email and password, returns a JWT token",
+                "description": "Authenticates an admin using email and password and returns a JWT token",
                 "consumes": [
                     "application/json"
                 ],
@@ -129,7 +191,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or incorrect password",
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -158,7 +226,7 @@ const docTemplate = `{
                 "summary": "Update admin profile details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Admin ID",
                         "name": "id",
                         "in": "path",
@@ -206,15 +274,6 @@ const docTemplate = `{
                     "Image Upload"
                 ],
                 "summary": "Generates presigned URL for admin profile image upload and updates the image path in database",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Admin ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -252,7 +311,7 @@ const docTemplate = `{
                 "summary": "Update admin password",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Admin ID",
                         "name": "id",
                         "in": "path",
@@ -302,7 +361,7 @@ const docTemplate = `{
                 "summary": "Accept a business application",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -317,13 +376,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -333,7 +398,7 @@ const docTemplate = `{
         },
         "/business/application/create": {
             "post": {
-                "description": "Submits an application for business approval with status set to APPLIED",
+                "description": "Submits an application for business approval",
                 "consumes": [
                     "application/json"
                 ],
@@ -351,7 +416,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.businessApplicationRequest"
+                            "$ref": "#/definitions/models.CreateApplicationRequest"
                         }
                     }
                 ],
@@ -363,13 +428,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing business ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -389,7 +454,7 @@ const docTemplate = `{
                 "summary": "Get business application details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -398,20 +463,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "application details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -434,7 +505,7 @@ const docTemplate = `{
                 "summary": "Reject a business application",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -446,7 +517,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.businessApplicationRequest"
+                            "$ref": "#/definitions/models.RejectApplicationRequest"
                         }
                     }
                 ],
@@ -458,13 +529,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID, payload, or missing reject reason",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -492,26 +569,26 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.businessRequest"
+                            "$ref": "#/definitions/models.CreateBusinessRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "business created successfully",
+                        "description": "business_id returned",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing fields",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -531,7 +608,7 @@ const docTemplate = `{
                 "summary": "Delete a business",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -546,19 +623,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Business not found",
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -568,7 +645,7 @@ const docTemplate = `{
         },
         "/business/get/all": {
             "get": {
-                "description": "Returns a list of all registered businesses",
+                "description": "Returns a paginated list of all registered businesses",
                 "produces": [
                     "application/json"
                 ],
@@ -576,22 +653,30 @@ const docTemplate = `{
                     "businesses"
                 ],
                 "summary": "Get all businesses",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "list of businesses",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
-                    "404": {
-                        "description": "No businesses found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -611,7 +696,7 @@ const docTemplate = `{
                 "summary": "Get complete business details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -620,20 +705,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "complete business details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -653,7 +744,7 @@ const docTemplate = `{
                 "summary": "Get business ID by user ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -662,26 +753,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "business id",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "No business found for this user",
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -701,7 +792,7 @@ const docTemplate = `{
                 "summary": "Get business details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -710,20 +801,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "business details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -751,7 +848,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.legalRequest"
+                            "$ref": "#/definitions/models.CreateLegalRequest"
                         }
                     }
                 ],
@@ -763,13 +860,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing business ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -789,7 +886,7 @@ const docTemplate = `{
                 "summary": "Get business legal details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -798,20 +895,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "legal details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -834,7 +937,7 @@ const docTemplate = `{
                 "summary": "Update business legal documents",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -846,7 +949,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.legalRequest"
+                            "$ref": "#/definitions/models.CreateLegalRequest"
                         }
                     }
                 ],
@@ -858,13 +961,350 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/rate": {
+            "post": {
+                "description": "Submits or updates a rating for a business by a user (upsert)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Rate a business",
+                "parameters": [
+                    {
+                        "description": "Rating payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RateBusinessRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/rate/average/{id}": {
+            "get": {
+                "description": "Returns the average rating for the business with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Get average business rating",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/rate/get/{id}": {
+            "get": {
+                "description": "Returns a list of all user ratings for the given business",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Get all business ratings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/review/create": {
+            "post": {
+                "description": "Creates a new written review for a business",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Create a business review",
+                "parameters": [
+                    {
+                        "description": "Business review payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateBusinessReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "review_id returned",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/review/delete/{id}": {
+            "delete": {
+                "description": "Deletes the business review with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Delete a business review",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/review/get/{id}": {
+            "get": {
+                "description": "Returns a paginated list of reviews for the business with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Get all business reviews",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/business/review/update/{id}": {
+            "put": {
+                "description": "Updates the review text of the business review with the given ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Update a business review",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Review update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -892,7 +1332,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.socialRequest"
+                            "$ref": "#/definitions/models.CreateSocialRequest"
                         }
                     }
                 ],
@@ -904,13 +1344,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing business ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -930,7 +1370,7 @@ const docTemplate = `{
                 "summary": "Get business social details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -939,20 +1379,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "social details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -975,7 +1421,7 @@ const docTemplate = `{
                 "summary": "Update business social links",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -987,7 +1433,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.socialRequest"
+                            "$ref": "#/definitions/models.CreateSocialRequest"
                         }
                     }
                 ],
@@ -999,13 +1445,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1028,11 +1474,20 @@ const docTemplate = `{
                 "summary": "Update business blocked status",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Status payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateBusinessStatusRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -1043,13 +1498,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1072,11 +1527,20 @@ const docTemplate = `{
                 "summary": "Update business trusted status",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Status payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateBusinessStatusRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -1087,13 +1551,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1116,11 +1580,20 @@ const docTemplate = `{
                 "summary": "Update business verified status",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Status payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateBusinessStatusRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -1131,13 +1604,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1157,7 +1630,7 @@ const docTemplate = `{
                 "summary": "Check if business is approved",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -1166,20 +1639,20 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "approval status",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1197,15 +1670,6 @@ const docTemplate = `{
                     "Image Upload"
                 ],
                 "summary": "Generate presigned URL for business profile image upload and updates the image path in database",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1243,7 +1707,7 @@ const docTemplate = `{
                 "summary": "Update business details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -1255,7 +1719,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.businessRequest"
+                            "$ref": "#/definitions/models.UpdateBusinessRequest"
                         }
                     }
                 ],
@@ -1267,13 +1731,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1301,26 +1765,26 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.categoryRequest"
+                            "$ref": "#/definitions/models.CreateCategoryRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "category created successfully",
+                        "description": "category_id returned",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing fields",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1340,7 +1804,7 @@ const docTemplate = `{
                 "summary": "Delete a category",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -1355,13 +1819,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1381,14 +1851,14 @@ const docTemplate = `{
                 "summary": "Get all categories",
                 "responses": {
                     "200": {
-                        "description": "list of categories",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1408,7 +1878,7 @@ const docTemplate = `{
                 "summary": "Get category by ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -1417,20 +1887,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "category details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1458,26 +1934,26 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.subCategoryRequest"
+                            "$ref": "#/definitions/models.CreateSubCategoryRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "sub category created successfully",
+                        "description": "sub_category_id returned",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing fields",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1497,7 +1973,7 @@ const docTemplate = `{
                 "summary": "Delete a sub-category",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Sub-category ID",
                         "name": "id",
                         "in": "path",
@@ -1512,13 +1988,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1538,14 +2020,14 @@ const docTemplate = `{
                 "summary": "Get all sub-categories",
                 "responses": {
                     "200": {
-                        "description": "list of sub-categories",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1565,7 +2047,7 @@ const docTemplate = `{
                 "summary": "Get sub-categories by category ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -1574,20 +2056,20 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "list of sub-categories",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing category ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1607,7 +2089,7 @@ const docTemplate = `{
                 "summary": "Get sub-category by ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Sub-category ID",
                         "name": "id",
                         "in": "path",
@@ -1616,20 +2098,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "sub-category details",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1647,15 +2135,6 @@ const docTemplate = `{
                     "Image Upload"
                 ],
                 "summary": "Generate presigned URL for sub-category image upload and updates the image path in database",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sub-category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1693,7 +2172,7 @@ const docTemplate = `{
                 "summary": "Update a sub-category",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Sub-category ID",
                         "name": "id",
                         "in": "path",
@@ -1705,7 +2184,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.subCategoryRequest"
+                            "$ref": "#/definitions/models.UpdateSubCategoryRequest"
                         }
                     }
                 ],
@@ -1717,13 +2196,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1741,15 +2226,6 @@ const docTemplate = `{
                     "Image Upload"
                 ],
                 "summary": "Generate presigned URL for category image upload and updates the image path in database",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1787,7 +2263,7 @@ const docTemplate = `{
                 "summary": "Update a category",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -1799,7 +2275,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.categoryRequest"
+                            "$ref": "#/definitions/models.UpdateCategoryRequest"
                         }
                     }
                 ],
@@ -1811,13 +2287,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1825,9 +2307,184 @@ const docTemplate = `{
                 }
             }
         },
+        "/chat/history": {
+            "get": {
+                "description": "Returns all messages exchanged between two users, ordered oldest to newest",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get chat history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "First user ID",
+                        "name": "user1_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Second user ID",
+                        "name": "user2_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/read": {
+            "put": {
+                "description": "Marks all unread messages from sender_id to receiver_id as read",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Mark messages as read",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sender user ID",
+                        "name": "sender_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Receiver user ID",
+                        "name": "receiver_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/send": {
+            "post": {
+                "description": "Sends a text message from one user to another and persists it in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Send a message",
+                "parameters": [
+                    {
+                        "description": "Message payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SendMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Saved message with id and created_at",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/ws": {
+            "get": {
+                "description": "Upgrades the connection to WebSocket. Pass ?user_id=\u003cuuid\u003e. Send JSON {\"receiver_id\":\"...\",\"content\":\"...\"}; receive JSON Message objects in real-time.",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Real-time chat WebSocket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authenticated user ID",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/follower/follow": {
             "post": {
-                "description": "Creates a follower relationship between a user and a business",
+                "description": "Creates a follower relationship between a user and a business (idempotent)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1845,7 +2502,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.followerRequest"
+                            "$ref": "#/definitions/models.FollowRequest"
                         }
                     }
                 ],
@@ -1857,13 +2514,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing fields",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1883,7 +2540,7 @@ const docTemplate = `{
                 "summary": "Get followers count",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
@@ -1892,20 +2549,20 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "followers count",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing business ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1915,7 +2572,7 @@ const docTemplate = `{
         },
         "/follower/get/followers/{id}": {
             "get": {
-                "description": "Returns a list of all users following the given business",
+                "description": "Returns a paginated list of all users following the given business",
                 "produces": [
                     "application/json"
                 ],
@@ -1925,29 +2582,41 @@ const docTemplate = `{
                 "summary": "Get all followers",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "list of followers",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing business ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1967,7 +2636,7 @@ const docTemplate = `{
                 "summary": "Get following count",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -1976,20 +2645,20 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "following count",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing user ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -1999,7 +2668,7 @@ const docTemplate = `{
         },
         "/follower/get/followings/{id}": {
             "get": {
-                "description": "Returns a list of all businesses a user is following",
+                "description": "Returns a paginated list of all businesses a user is following",
                 "produces": [
                     "application/json"
                 ],
@@ -2009,29 +2678,41 @@ const docTemplate = `{
                 "summary": "Get all followings",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "list of followings",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid or missing user ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2059,25 +2740,72 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.followerRequest"
+                            "$ref": "#/definitions/models.FollowRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing fields",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/create": {
+            "post": {
+                "description": "Creates a new product listing for a business",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Create a product",
+                "parameters": [
+                    {
+                        "description": "Product creation payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "product_id returned",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2134,6 +2862,773 @@ const docTemplate = `{
                 }
             }
         },
+        "/product/delete/{id}": {
+            "delete": {
+                "description": "Deletes the product with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Delete a product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/get/all": {
+            "get": {
+                "description": "Returns a paginated list of active products. Supports optional name search and location filters.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get all products",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by product name (case-insensitive)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by business city (case-insensitive)",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by business state (case-insensitive)",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/get/business/{id}": {
+            "get": {
+                "description": "Returns a paginated list of products for the given business ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get products by business",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/get/category/{id}": {
+            "get": {
+                "description": "Returns a paginated list of active products in the given category",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get products by category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/get/followers/{id}": {
+            "get": {
+                "description": "Returns a paginated list of active products from all businesses the user follows",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get products from followed businesses",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/get/sub/category/{id}": {
+            "get": {
+                "description": "Returns a paginated list of active products in the given sub-category",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get products by sub-category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sub-category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/get/{id}": {
+            "get": {
+                "description": "Returns full product details including business, category, and image info",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get product details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/rate": {
+            "post": {
+                "description": "Submits or updates a rating for a product by a user (upsert). Rating must be between 0.5 and 5.0.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Rate a product",
+                "parameters": [
+                    {
+                        "description": "Product rating payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RateProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/rate/average/{id}": {
+            "get": {
+                "description": "Returns the average rating for the product with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get average product rating",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/rate/delete/{id}": {
+            "delete": {
+                "description": "Deletes the product rating with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Delete a product rating",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Rating ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/rate/get/{id}": {
+            "get": {
+                "description": "Returns a paginated list of ratings for the product with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get all product ratings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/review/create": {
+            "post": {
+                "description": "Creates a new written review for a product",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Create a product review",
+                "parameters": [
+                    {
+                        "description": "Product review payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateProductReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "review_id returned",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/review/delete/{id}": {
+            "delete": {
+                "description": "Deletes the product review with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Delete a product review",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/review/get/{id}": {
+            "get": {
+                "description": "Returns a paginated list of reviews for the product with the given ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get all product reviews",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/review/update/{id}": {
+            "put": {
+                "description": "Updates the review text of the product review with the given ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Update a product review",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Review update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/product/update/image": {
             "put": {
                 "description": "Returns an S3 presigned URL to upload an image for the given product",
@@ -2180,6 +3675,124 @@ const docTemplate = `{
                 }
             }
         },
+        "/product/update/status/{id}": {
+            "patch": {
+                "description": "Activates or deactivates the product with the given ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Toggle product active status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Status payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ChangeProductStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/product/update/{id}": {
+            "put": {
+                "description": "Updates the details of the product with the given ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Update a product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Product update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/rfq/create": {
             "post": {
                 "description": "Creates a new Request for Quotation for a business",
@@ -2200,25 +3813,26 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.rfqRequest"
+                            "$ref": "#/definitions/models.CreateRFQRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "rfq_id returned",
                         "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or missing required fields",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2238,7 +3852,7 @@ const docTemplate = `{
                 "summary": "Delete an RFQ",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "RFQ ID",
                         "name": "id",
                         "in": "path",
@@ -2253,13 +3867,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2269,7 +3889,7 @@ const docTemplate = `{
         },
         "/rfq/get/all": {
             "get": {
-                "description": "Returns a list of all RFQs across all businesses",
+                "description": "Returns a paginated list of all RFQs across all businesses. Supports optional search and location filters.",
                 "produces": [
                     "application/json"
                 ],
@@ -2277,16 +3897,48 @@ const docTemplate = `{
                     "rfq"
                 ],
                 "summary": "Get all RFQs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by product name (case-insensitive)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by business city (case-insensitive)",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by business state (case-insensitive)",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "list of rfqs",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2296,7 +3948,7 @@ const docTemplate = `{
         },
         "/rfq/get/{id}": {
             "get": {
-                "description": "Returns all RFQs belonging to the business with the given ID",
+                "description": "Returns a paginated list of RFQs belonging to the given business",
                 "produces": [
                     "application/json"
                 ],
@@ -2306,29 +3958,41 @@ const docTemplate = `{
                 "summary": "Get RFQs by business ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Business ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "list of rfqs",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2351,7 +4015,7 @@ const docTemplate = `{
                 "summary": "Activate or deactivate an RFQ",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "RFQ ID",
                         "name": "id",
                         "in": "path",
@@ -2363,7 +4027,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.activateRFQRequest"
+                            "$ref": "#/definitions/models.ActivateRFQRequest"
                         }
                     }
                 ],
@@ -2375,13 +4039,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2404,7 +4074,7 @@ const docTemplate = `{
                 "summary": "Update an RFQ",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "RFQ ID",
                         "name": "id",
                         "in": "path",
@@ -2416,7 +4086,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.rfqRequest"
+                            "$ref": "#/definitions/models.UpdateRFQRequest"
                         }
                     }
                 ],
@@ -2428,13 +4098,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID or payload",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2457,7 +4133,7 @@ const docTemplate = `{
                 "summary": "Block or unblock a user",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -2524,17 +4200,19 @@ const docTemplate = `{
                         "description": "user created successfully",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": true
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid payload or validation error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2554,7 +4232,7 @@ const docTemplate = `{
                 "summary": "Delete user",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -2574,6 +4252,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -2585,7 +4269,7 @@ const docTemplate = `{
         },
         "/user/get/all": {
             "get": {
-                "description": "Returns a list of all registered users",
+                "description": "Returns a paginated list of all registered users",
                 "produces": [
                     "application/json"
                 ],
@@ -2593,6 +4277,20 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Get all users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page, max 100 (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "list of users",
@@ -2622,7 +4320,7 @@ const docTemplate = `{
                 "summary": "Get user details by ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -2643,6 +4341,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -2654,7 +4358,7 @@ const docTemplate = `{
         },
         "/user/login": {
             "post": {
-                "description": "Authenticates a user using email and password, returns a JWT token along with business context",
+                "description": "Authenticates a user using email and password and returns a JWT token with business context",
                 "consumes": [
                     "application/json"
                 ],
@@ -2684,7 +4388,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid payload or incorrect password",
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2713,7 +4423,7 @@ const docTemplate = `{
                 "summary": "Update user profile details",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -2761,15 +4471,6 @@ const docTemplate = `{
                     "Image Upload"
                 ],
                 "summary": "Generate presigned URL for user profile image upload and updates the image path in database",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2807,7 +4508,7 @@ const docTemplate = `{
                 "summary": "Update user password",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -2887,15 +4588,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.activateRFQRequest": {
-            "type": "object",
-            "properties": {
-                "is_rfq_active": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
         "handlers.blockUserRequest": {
             "type": "object",
             "properties": {
@@ -2905,24 +4597,125 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.businessApplicationRequest": {
+        "handlers.getTokenByEmailPasswordRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "StrongPass@1"
+                }
+            }
+        },
+        "handlers.productImageRequest": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.registerUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "StrongPass@1"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "9876543210"
+                }
+            }
+        },
+        "handlers.updatePasswordRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "NewPass@123"
+                }
+            }
+        },
+        "handlers.updateUserProfileDetailsRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "9876543210"
+                }
+            }
+        },
+        "models.ActivateRFQRequest": {
+            "type": "object",
+            "properties": {
+                "is_rfq_active": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "models.ChangeProductStatusRequest": {
+            "type": "object",
+            "properties": {
+                "is_product_active": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "models.CreateApplicationRequest": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "string",
                     "example": "biz-uuid-001"
-                },
-                "reject_reason": {
-                    "type": "string",
-                    "example": "Documents incomplete"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "APPLIED"
                 }
             }
         },
-        "handlers.businessRequest": {
+        "models.CreateBusinessRequest": {
             "type": "object",
             "properties": {
                 "address": {
@@ -2963,38 +4756,16 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.categoryRequest": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "All types of grains and cereals"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "cat-uuid-001"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Grains"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.followerRequest": {
+        "models.CreateBusinessReviewRequest": {
             "type": "object",
             "properties": {
                 "business_id": {
                     "type": "string",
                     "example": "biz-uuid-001"
                 },
-                "created_at": {
-                    "type": "string"
+                "review": {
+                    "type": "string",
+                    "example": "Excellent service!"
                 },
                 "user_id": {
                     "type": "string",
@@ -3002,20 +4773,20 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.getTokenByEmailPasswordRequest": {
+        "models.CreateCategoryRequest": {
             "type": "object",
             "properties": {
-                "email": {
+                "description": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "All types of grains and cereals"
                 },
-                "password": {
+                "name": {
                     "type": "string",
-                    "example": "StrongPass@1"
+                    "example": "Grains"
                 }
             }
         },
-        "handlers.legalRequest": {
+        "models.CreateLegalRequest": {
             "type": "object",
             "properties": {
                 "aadhaar": {
@@ -3048,56 +4819,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.productImageRequest": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "image": {
-                    "type": "string"
-                },
-                "index": {
-                    "type": "integer"
-                },
-                "product_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "integer"
-                }
-            }
-        },
-        "handlers.registerUserRequest": {
-            "description": "Registration request body",
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "john@example.com"
-                },
-                "first_name": {
-                    "type": "string",
-                    "example": "John"
-                },
-                "last_name": {
-                    "type": "string",
-                    "example": "Doe"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "StrongPass@1"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "9876543210"
-                }
-            }
-        },
-        "handlers.rfqRequest": {
+        "models.CreateProductRequest": {
             "type": "object",
             "properties": {
                 "business_id": {
@@ -3108,12 +4830,67 @@ const docTemplate = `{
                     "type": "string",
                     "example": "cat-uuid-001"
                 },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
+                "description": {
                     "type": "string",
-                    "example": "rfq-uuid-001"
+                    "example": "High quality wheat"
+                },
+                "is_product_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "moq": {
+                    "type": "string",
+                    "example": "100kg"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wheat"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 25.5
+                },
+                "quantity": {
+                    "type": "number",
+                    "example": 1000
+                },
+                "sub_category_id": {
+                    "type": "string",
+                    "example": "subcat-uuid-001"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "kg"
+                }
+            }
+        },
+        "models.CreateProductReviewRequest": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "string",
+                    "example": "prod-uuid-001"
+                },
+                "review": {
+                    "type": "string",
+                    "example": "Great product quality!"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "user-uuid-001"
+                }
+            }
+        },
+        "models.CreateRFQRequest": {
+            "type": "object",
+            "properties": {
+                "business_id": {
+                    "type": "string",
+                    "example": "biz-uuid-001"
+                },
+                "category_id": {
+                    "type": "string",
+                    "example": "cat-uuid-001"
                 },
                 "is_rfq_active": {
                     "type": "boolean",
@@ -3138,13 +4915,10 @@ const docTemplate = `{
                 "unit": {
                     "type": "string",
                     "example": "kg"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },
-        "handlers.socialRequest": {
+        "models.CreateSocialRequest": {
             "type": "object",
             "properties": {
                 "facebook": {
@@ -3181,62 +4955,249 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.subCategoryRequest": {
+        "models.CreateSubCategoryRequest": {
             "type": "object",
             "properties": {
                 "category_id": {
                     "type": "string",
                     "example": "cat-uuid-001"
                 },
-                "created_at": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string",
                     "example": "All varieties of wheat"
                 },
-                "id": {
+                "name": {
                     "type": "string",
-                    "example": "subcat-uuid-001"
+                    "example": "Wheat"
+                }
+            }
+        },
+        "models.FollowRequest": {
+            "type": "object",
+            "properties": {
+                "business_id": {
+                    "type": "string",
+                    "example": "biz-uuid-001"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "user-uuid-001"
+                }
+            }
+        },
+        "models.RateBusinessRequest": {
+            "type": "object",
+            "properties": {
+                "business_id": {
+                    "type": "string",
+                    "example": "biz-uuid-001"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 4.5
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "user-uuid-001"
+                }
+            }
+        },
+        "models.RateProductRequest": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "string",
+                    "example": "prod-uuid-001"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 4.5
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "user-uuid-001"
+                }
+            }
+        },
+        "models.RejectApplicationRequest": {
+            "type": "object",
+            "properties": {
+                "reject_reason": {
+                    "type": "string",
+                    "example": "Documents incomplete"
+                }
+            }
+        },
+        "models.SendMessageRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Hello, is this product available?"
+                },
+                "receiver_id": {
+                    "type": "string",
+                    "example": "user-uuid-002"
+                },
+                "sender_id": {
+                    "type": "string",
+                    "example": "user-uuid-001"
+                }
+            }
+        },
+        "models.UpdateBusinessRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "123 Market Street"
+                },
+                "business_type": {
+                    "type": "string",
+                    "example": "TRADER"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Pune"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "business@example.com"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Agro Traders Pvt Ltd"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "9876543210"
+                },
+                "pincode": {
+                    "type": "string",
+                    "example": "411001"
+                },
+                "state": {
+                    "type": "string",
+                    "example": "Maharashtra"
+                }
+            }
+        },
+        "models.UpdateBusinessStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "models.UpdateCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "All types of grains and cereals"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Grains"
+                }
+            }
+        },
+        "models.UpdateProductRequest": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string",
+                    "example": "cat-uuid-001"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "High quality wheat"
+                },
+                "moq": {
+                    "type": "string",
+                    "example": "100kg"
                 },
                 "name": {
                     "type": "string",
                     "example": "Wheat"
                 },
-                "updated_at": {
-                    "type": "string"
+                "price": {
+                    "type": "number",
+                    "example": 25.5
+                },
+                "quantity": {
+                    "type": "number",
+                    "example": 1000
+                },
+                "sub_category_id": {
+                    "type": "string",
+                    "example": "subcat-uuid-001"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "kg"
                 }
             }
         },
-        "handlers.updatePasswordRequest": {
+        "models.UpdateRFQRequest": {
             "type": "object",
             "properties": {
-                "password": {
+                "category_id": {
                     "type": "string",
-                    "example": "NewPass@123"
+                    "example": "cat-uuid-001"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 1200.5
+                },
+                "product_name": {
+                    "type": "string",
+                    "example": "Wheat"
+                },
+                "quantity": {
+                    "type": "number",
+                    "example": 500
+                },
+                "sub_category_id": {
+                    "type": "string",
+                    "example": "subcat-uuid-001"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "kg"
                 }
             }
         },
-        "handlers.updateUserProfileDetailsRequest": {
+        "models.UpdateReviewRequest": {
             "type": "object",
             "properties": {
-                "email": {
+                "review": {
                     "type": "string",
-                    "example": "john@example.com"
-                },
-                "first_name": {
-                    "type": "string",
-                    "example": "John"
-                },
-                "last_name": {
-                    "type": "string",
-                    "example": "Doe"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "9876543210"
+                    "example": "Updated review text"
                 }
             }
+        },
+        "models.UpdateSubCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "All varieties of wheat"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wheat"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -3245,10 +5206,10 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "",
+	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Agromart API",
-	Description:      "Agromart backend server",
+	Description:      "Agromart B2B agricultural marketplace backend server.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
