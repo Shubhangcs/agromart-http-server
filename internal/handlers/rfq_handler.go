@@ -60,6 +60,7 @@ func (rh *RFQHandler) validateCreateRFQ(req *models.CreateRFQRequest) error {
 // @Success      201 {object} map[string]interface{} "rfq_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /rfq/create [post]
 func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateRFQRequest
@@ -102,6 +103,7 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /rfq/update/status/{id} [put]
 func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -139,6 +141,7 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /rfq/update/{id} [put]
 func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -182,6 +185,7 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /rfq/delete/{id} [delete]
 func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -213,6 +217,7 @@ func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 // @Param        state query string false "Filter by business state (case-insensitive)"
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /rfq/get/all [get]
 func (rh *RFQHandler) HandleGetAllRFQ(w http.ResponseWriter, r *http.Request) {
 	pg := utils.ReadPaginationParams(r)
@@ -241,6 +246,7 @@ func (rh *RFQHandler) HandleGetAllRFQ(w http.ResponseWriter, r *http.Request) {
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /rfq/get/{id} [get]
 func (rh *RFQHandler) HandleGetRFQByBusinessID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

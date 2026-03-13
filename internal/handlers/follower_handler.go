@@ -44,6 +44,7 @@ func (fh *FollowerHandler) validateFollowRequest(req *models.FollowRequest) erro
 // @Success      201 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /follower/follow [post]
 func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.Request) {
 	var req models.FollowRequest
@@ -77,6 +78,7 @@ func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.R
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /follower/unfollow [post]
 func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.Request) {
 	var req models.FollowRequest
@@ -109,6 +111,7 @@ func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.R
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /follower/get/followers/count/{id} [get]
 func (fh *FollowerHandler) HandleGetFollowersCount(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -134,6 +137,7 @@ func (fh *FollowerHandler) HandleGetFollowersCount(w http.ResponseWriter, r *htt
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /follower/get/following/count/{id} [get]
 func (fh *FollowerHandler) HandleGetFollowingCount(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -161,6 +165,7 @@ func (fh *FollowerHandler) HandleGetFollowingCount(w http.ResponseWriter, r *htt
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /follower/get/followers/{id} [get]
 func (fh *FollowerHandler) HandleGetAllFollowers(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -193,6 +198,7 @@ func (fh *FollowerHandler) HandleGetAllFollowers(w http.ResponseWriter, r *http.
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /follower/get/followings/{id} [get]
 func (fh *FollowerHandler) HandleGetAllFollowing(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

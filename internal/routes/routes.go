@@ -50,7 +50,7 @@ func usersRoutes(app *app.Application, r *chi.Mux) {
 		r.Put("/update/image/{id}", app.BlobHandler.HandleUpdateAdminProfileImage)
 		r.Put("/update/details/{id}", app.UserHandler.HandleUpdateAdminDetails)
 		r.Put("/update/password/{id}", app.UserHandler.HandleUpdateAdminPassword)
-		r.Delete("/delete", app.UserHandler.HandleDeleteAdmin)
+		r.Delete("/delete/{id}", app.UserHandler.HandleDeleteAdmin)
 	})
 
 	r.Route("/user", func(r chi.Router) {
@@ -61,7 +61,7 @@ func usersRoutes(app *app.Application, r *chi.Mux) {
 		r.Put("/update/details/{id}", app.UserHandler.HandleUpdateUserDetails)
 		r.Put("/update/password/{id}", app.UserHandler.HandleUpdateUserPassword)
 		r.Put("/block/{id}", app.UserHandler.HandleBlockUser)
-		r.Delete("/delete", app.UserHandler.HandleDeleteUser)
+		r.Delete("/delete/{id}", app.UserHandler.HandleDeleteUser)
 	})
 }
 

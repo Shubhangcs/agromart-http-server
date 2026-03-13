@@ -58,6 +58,7 @@ func (ch *CategoryHandler) validateCreateSubCategory(req *models.CreateSubCatego
 // @Success      201 {object} map[string]interface{} "category_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/create [post]
 func (ch *CategoryHandler) HandleCreateCategory(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateCategoryRequest
@@ -92,6 +93,7 @@ func (ch *CategoryHandler) HandleCreateCategory(w http.ResponseWriter, r *http.R
 // @Success      201 {object} map[string]interface{} "sub_category_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/sub/create [post]
 func (ch *CategoryHandler) HandleCreateSubCategory(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSubCategoryRequest
@@ -129,6 +131,7 @@ func (ch *CategoryHandler) HandleCreateSubCategory(w http.ResponseWriter, r *htt
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/update/{id} [put]
 func (ch *CategoryHandler) HandleUpdateCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -170,6 +173,7 @@ func (ch *CategoryHandler) HandleUpdateCategory(w http.ResponseWriter, r *http.R
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/sub/update/{id} [put]
 func (ch *CategoryHandler) HandleUpdateSubCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -209,6 +213,7 @@ func (ch *CategoryHandler) HandleUpdateSubCategory(w http.ResponseWriter, r *htt
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/delete/{id} [delete]
 func (ch *CategoryHandler) HandleDeleteCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -238,6 +243,7 @@ func (ch *CategoryHandler) HandleDeleteCategory(w http.ResponseWriter, r *http.R
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/sub/delete/{id} [delete]
 func (ch *CategoryHandler) HandleDeleteSubCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -267,6 +273,7 @@ func (ch *CategoryHandler) HandleDeleteSubCategory(w http.ResponseWriter, r *htt
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/get/{id} [get]
 func (ch *CategoryHandler) HandleGetCategoryByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -297,6 +304,7 @@ func (ch *CategoryHandler) HandleGetCategoryByID(w http.ResponseWriter, r *http.
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/sub/get/{id} [get]
 func (ch *CategoryHandler) HandleGetSubCategoryByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -324,6 +332,7 @@ func (ch *CategoryHandler) HandleGetSubCategoryByID(w http.ResponseWriter, r *ht
 // @Produce      json
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/get/all [get]
 func (ch *CategoryHandler) HandleGetAllCategories(w http.ResponseWriter, r *http.Request) {
 	res, err := ch.categoryStore.GetAllCategories()
@@ -342,6 +351,7 @@ func (ch *CategoryHandler) HandleGetAllCategories(w http.ResponseWriter, r *http
 // @Produce      json
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/sub/get/all [get]
 func (ch *CategoryHandler) HandleGetAllSubCategories(w http.ResponseWriter, r *http.Request) {
 	res, err := ch.categoryStore.GetAllSubCategories()
@@ -362,6 +372,7 @@ func (ch *CategoryHandler) HandleGetAllSubCategories(w http.ResponseWriter, r *h
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /category/sub/get/category/{id} [get]
 func (ch *CategoryHandler) HandleGetSubCategoriesByCategoryID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

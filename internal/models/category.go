@@ -14,7 +14,7 @@ type Category struct {
 type SubCategory struct {
 	ID               string    `json:"id"`
 	CategoryID       string    `json:"category_id"`
-	SubCategoryImage *string   `json:"category_image"`
+	SubCategoryImage *string   `json:"sub_category_image"`
 	Name             string    `json:"name"`
 	Description      string    `json:"description"`
 	CreatedAT        time.Time `json:"created_at"`

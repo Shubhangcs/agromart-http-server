@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.registerUserRequest"
+                            "$ref": "#/definitions/models.CreateAdminRequest"
                         }
                     }
                 ],
@@ -66,6 +66,11 @@ const docTemplate = `{
         },
         "/admin/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the admin with the given ID",
                 "produces": [
                     "application/json"
@@ -113,6 +118,11 @@ const docTemplate = `{
         },
         "/admin/get/admin/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the details of the admin with the given ID",
                 "produces": [
                     "application/json"
@@ -179,7 +189,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.getTokenByEmailPasswordRequest"
+                            "$ref": "#/definitions/models.LoginRequest"
                         }
                     }
                 ],
@@ -213,6 +223,11 @@ const docTemplate = `{
         },
         "/admin/update/details/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the profile details of the admin with the given ID",
                 "consumes": [
                     "application/json"
@@ -238,7 +253,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.updateUserProfileDetailsRequest"
+                            "$ref": "#/definitions/models.UpdateUserDetailsRequest"
                         }
                     }
                 ],
@@ -266,6 +281,11 @@ const docTemplate = `{
         },
         "/admin/update/image/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns an S3 presigned URL to upload a profile image for the given admin",
                 "produces": [
                     "application/json"
@@ -298,6 +318,11 @@ const docTemplate = `{
         },
         "/admin/update/password/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the password of the admin with the given ID",
                 "consumes": [
                     "application/json"
@@ -323,7 +348,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.updatePasswordRequest"
+                            "$ref": "#/definitions/models.UpdatePasswordRequest"
                         }
                     }
                 ],
@@ -351,6 +376,11 @@ const docTemplate = `{
         },
         "/business/application/accept/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Marks the business application for the given ID as accepted",
                 "produces": [
                     "application/json"
@@ -398,6 +428,11 @@ const docTemplate = `{
         },
         "/business/application/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Submits an application for business approval",
                 "consumes": [
                     "application/json"
@@ -444,6 +479,11 @@ const docTemplate = `{
         },
         "/business/application/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the application status and details for the business with the given ID",
                 "produces": [
                     "application/json"
@@ -492,6 +532,11 @@ const docTemplate = `{
         },
         "/business/application/reject/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Marks the business application for the given ID as rejected with a reason",
                 "consumes": [
                     "application/json"
@@ -551,6 +596,11 @@ const docTemplate = `{
         },
         "/business/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new business profile for a user",
                 "consumes": [
                     "application/json"
@@ -598,6 +648,11 @@ const docTemplate = `{
         },
         "/business/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the business with the given ID",
                 "produces": [
                     "application/json"
@@ -645,6 +700,11 @@ const docTemplate = `{
         },
         "/business/get/all": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of all registered businesses",
                 "produces": [
                     "application/json"
@@ -686,6 +746,11 @@ const docTemplate = `{
         },
         "/business/get/complete/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns full business profile including social, legal, and application details",
                 "produces": [
                     "application/json"
@@ -734,6 +799,11 @@ const docTemplate = `{
         },
         "/business/get/user/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the business ID associated with the given user ID",
                 "produces": [
                     "application/json"
@@ -782,6 +852,11 @@ const docTemplate = `{
         },
         "/business/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the basic profile of the business with the given ID",
                 "produces": [
                     "application/json"
@@ -830,6 +905,11 @@ const docTemplate = `{
         },
         "/business/legal/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates legal document records for the given business",
                 "consumes": [
                     "application/json"
@@ -876,6 +956,11 @@ const docTemplate = `{
         },
         "/business/legal/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the legal documents for the business with the given ID",
                 "produces": [
                     "application/json"
@@ -924,6 +1009,11 @@ const docTemplate = `{
         },
         "/business/legal/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the legal document records for the business with the given ID",
                 "consumes": [
                     "application/json"
@@ -977,6 +1067,11 @@ const docTemplate = `{
         },
         "/business/rate": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Submits or updates a rating for a business by a user (upsert)",
                 "consumes": [
                     "application/json"
@@ -1023,6 +1118,11 @@ const docTemplate = `{
         },
         "/business/rate/average/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the average rating for the business with the given ID",
                 "produces": [
                     "application/json"
@@ -1065,6 +1165,11 @@ const docTemplate = `{
         },
         "/business/rate/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a list of all user ratings for the given business",
                 "produces": [
                     "application/json"
@@ -1107,6 +1212,11 @@ const docTemplate = `{
         },
         "/business/review/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new written review for a business",
                 "consumes": [
                     "application/json"
@@ -1154,6 +1264,11 @@ const docTemplate = `{
         },
         "/business/review/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the business review with the given ID",
                 "produces": [
                     "application/json"
@@ -1201,6 +1316,11 @@ const docTemplate = `{
         },
         "/business/review/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of reviews for the business with the given ID",
                 "produces": [
                     "application/json"
@@ -1255,6 +1375,11 @@ const docTemplate = `{
         },
         "/business/review/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the review text of the business review with the given ID",
                 "consumes": [
                     "application/json"
@@ -1314,6 +1439,11 @@ const docTemplate = `{
         },
         "/business/social/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates social media links for the given business",
                 "consumes": [
                     "application/json"
@@ -1360,6 +1490,11 @@ const docTemplate = `{
         },
         "/business/social/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the social media links for the business with the given ID",
                 "produces": [
                     "application/json"
@@ -1408,6 +1543,11 @@ const docTemplate = `{
         },
         "/business/social/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the social media links for the business with the given ID",
                 "consumes": [
                     "application/json"
@@ -1461,6 +1601,11 @@ const docTemplate = `{
         },
         "/business/status/block/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Sets the blocked status of the business with the given ID",
                 "consumes": [
                     "application/json"
@@ -1514,6 +1659,11 @@ const docTemplate = `{
         },
         "/business/status/trust/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Sets the trusted status of the business with the given ID",
                 "consumes": [
                     "application/json"
@@ -1567,6 +1717,11 @@ const docTemplate = `{
         },
         "/business/status/verify/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Sets the verified status of the business with the given ID",
                 "consumes": [
                     "application/json"
@@ -1620,6 +1775,11 @@ const docTemplate = `{
         },
         "/business/status/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns whether the business with the given ID has been approved",
                 "produces": [
                     "application/json"
@@ -1662,6 +1822,11 @@ const docTemplate = `{
         },
         "/business/update/image/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns an S3 presigned URL to upload a profile image for the given business",
                 "produces": [
                     "application/json"
@@ -1694,6 +1859,11 @@ const docTemplate = `{
         },
         "/business/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the profile details of the business with the given ID",
                 "consumes": [
                     "application/json"
@@ -1747,6 +1917,11 @@ const docTemplate = `{
         },
         "/category/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new product category",
                 "consumes": [
                     "application/json"
@@ -1794,6 +1969,11 @@ const docTemplate = `{
         },
         "/category/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the category with the given ID",
                 "produces": [
                     "application/json"
@@ -1841,6 +2021,11 @@ const docTemplate = `{
         },
         "/category/get/all": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a list of all product categories",
                 "produces": [
                     "application/json"
@@ -1868,6 +2053,11 @@ const docTemplate = `{
         },
         "/category/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the category with the given ID",
                 "produces": [
                     "application/json"
@@ -1916,6 +2106,11 @@ const docTemplate = `{
         },
         "/category/sub/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new sub-category under an existing category",
                 "consumes": [
                     "application/json"
@@ -1963,6 +2158,11 @@ const docTemplate = `{
         },
         "/category/sub/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the sub-category with the given ID",
                 "produces": [
                     "application/json"
@@ -2010,6 +2210,11 @@ const docTemplate = `{
         },
         "/category/sub/get/all": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a list of all sub-categories across all categories",
                 "produces": [
                     "application/json"
@@ -2037,6 +2242,11 @@ const docTemplate = `{
         },
         "/category/sub/get/category/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns all sub-categories belonging to the given category",
                 "produces": [
                     "application/json"
@@ -2079,6 +2289,11 @@ const docTemplate = `{
         },
         "/category/sub/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the sub-category with the given ID",
                 "produces": [
                     "application/json"
@@ -2127,6 +2342,11 @@ const docTemplate = `{
         },
         "/category/sub/update/image/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns an S3 presigned URL to upload an image for the given sub-category",
                 "produces": [
                     "application/json"
@@ -2159,6 +2379,11 @@ const docTemplate = `{
         },
         "/category/sub/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the name and description of the sub-category with the given ID",
                 "consumes": [
                     "application/json"
@@ -2218,6 +2443,11 @@ const docTemplate = `{
         },
         "/category/update/image/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns an S3 presigned URL to upload an image for the given category",
                 "produces": [
                     "application/json"
@@ -2250,6 +2480,11 @@ const docTemplate = `{
         },
         "/category/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the name and description of the category with the given ID",
                 "consumes": [
                     "application/json"
@@ -2309,6 +2544,11 @@ const docTemplate = `{
         },
         "/chat/history": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns all messages exchanged between two users, ordered oldest to newest",
                 "produces": [
                     "application/json"
@@ -2370,6 +2610,11 @@ const docTemplate = `{
         },
         "/chat/read": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Marks all unread messages from sender_id to receiver_id as read",
                 "produces": [
                     "application/json"
@@ -2418,6 +2663,11 @@ const docTemplate = `{
         },
         "/chat/send": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Sends a text message from one user to another and persists it in the database",
                 "consumes": [
                     "application/json"
@@ -2465,6 +2715,11 @@ const docTemplate = `{
         },
         "/chat/ws": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Upgrades the connection to WebSocket. Pass ?user_id=\u003cuuid\u003e. Send JSON {\"receiver_id\":\"...\",\"content\":\"...\"}; receive JSON Message objects in real-time.",
                 "tags": [
                     "chat"
@@ -2484,6 +2739,11 @@ const docTemplate = `{
         },
         "/follower/follow": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a follower relationship between a user and a business (idempotent)",
                 "consumes": [
                     "application/json"
@@ -2530,6 +2790,11 @@ const docTemplate = `{
         },
         "/follower/get/followers/count/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the total number of followers for a given business",
                 "produces": [
                     "application/json"
@@ -2572,6 +2837,11 @@ const docTemplate = `{
         },
         "/follower/get/followers/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of all users following the given business",
                 "produces": [
                     "application/json"
@@ -2626,6 +2896,11 @@ const docTemplate = `{
         },
         "/follower/get/following/count/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the total number of businesses a user is following",
                 "produces": [
                     "application/json"
@@ -2668,6 +2943,11 @@ const docTemplate = `{
         },
         "/follower/get/followings/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of all businesses a user is following",
                 "produces": [
                     "application/json"
@@ -2722,6 +3002,11 @@ const docTemplate = `{
         },
         "/follower/unfollow": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Removes the follower relationship between a user and a business",
                 "consumes": [
                     "application/json"
@@ -2768,6 +3053,11 @@ const docTemplate = `{
         },
         "/product/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new product listing for a business",
                 "consumes": [
                     "application/json"
@@ -2815,6 +3105,11 @@ const docTemplate = `{
         },
         "/product/delete/image": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns success message after successfully deleting image from both S3 and database",
                 "consumes": [
                     "application/json"
@@ -2864,6 +3159,11 @@ const docTemplate = `{
         },
         "/product/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the product with the given ID",
                 "produces": [
                     "application/json"
@@ -2911,6 +3211,11 @@ const docTemplate = `{
         },
         "/product/get/all": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of active products. Supports optional name search and location filters.",
                 "produces": [
                     "application/json"
@@ -2970,6 +3275,11 @@ const docTemplate = `{
         },
         "/product/get/business/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of products for the given business ID",
                 "produces": [
                     "application/json"
@@ -3024,6 +3334,11 @@ const docTemplate = `{
         },
         "/product/get/category/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of active products in the given category",
                 "produces": [
                     "application/json"
@@ -3078,6 +3393,11 @@ const docTemplate = `{
         },
         "/product/get/followers/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of active products from all businesses the user follows",
                 "produces": [
                     "application/json"
@@ -3132,6 +3452,11 @@ const docTemplate = `{
         },
         "/product/get/sub/category/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of active products in the given sub-category",
                 "produces": [
                     "application/json"
@@ -3186,6 +3511,11 @@ const docTemplate = `{
         },
         "/product/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns full product details including business, category, and image info",
                 "produces": [
                     "application/json"
@@ -3234,6 +3564,11 @@ const docTemplate = `{
         },
         "/product/rate": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Submits or updates a rating for a product by a user (upsert). Rating must be between 0.5 and 5.0.",
                 "consumes": [
                     "application/json"
@@ -3281,6 +3616,11 @@ const docTemplate = `{
         },
         "/product/rate/average/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the average rating for the product with the given ID",
                 "produces": [
                     "application/json"
@@ -3323,6 +3663,11 @@ const docTemplate = `{
         },
         "/product/rate/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the product rating with the given ID",
                 "produces": [
                     "application/json"
@@ -3370,6 +3715,11 @@ const docTemplate = `{
         },
         "/product/rate/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of ratings for the product with the given ID",
                 "produces": [
                     "application/json"
@@ -3424,6 +3774,11 @@ const docTemplate = `{
         },
         "/product/review/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new written review for a product",
                 "consumes": [
                     "application/json"
@@ -3471,6 +3826,11 @@ const docTemplate = `{
         },
         "/product/review/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the product review with the given ID",
                 "produces": [
                     "application/json"
@@ -3518,6 +3878,11 @@ const docTemplate = `{
         },
         "/product/review/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of reviews for the product with the given ID",
                 "produces": [
                     "application/json"
@@ -3572,6 +3937,11 @@ const docTemplate = `{
         },
         "/product/review/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the review text of the product review with the given ID",
                 "consumes": [
                     "application/json"
@@ -3631,6 +4001,11 @@ const docTemplate = `{
         },
         "/product/update/image": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns an S3 presigned URL to upload an image for the given product",
                 "consumes": [
                     "application/json"
@@ -3677,6 +4052,11 @@ const docTemplate = `{
         },
         "/product/update/status/{id}": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Activates or deactivates the product with the given ID",
                 "consumes": [
                     "application/json"
@@ -3736,6 +4116,11 @@ const docTemplate = `{
         },
         "/product/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the details of the product with the given ID",
                 "consumes": [
                     "application/json"
@@ -3795,6 +4180,11 @@ const docTemplate = `{
         },
         "/rfq/create": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new Request for Quotation for a business",
                 "consumes": [
                     "application/json"
@@ -3842,6 +4232,11 @@ const docTemplate = `{
         },
         "/rfq/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the RFQ with the given ID",
                 "produces": [
                     "application/json"
@@ -3889,6 +4284,11 @@ const docTemplate = `{
         },
         "/rfq/get/all": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of all RFQs across all businesses. Supports optional search and location filters.",
                 "produces": [
                     "application/json"
@@ -3948,6 +4348,11 @@ const docTemplate = `{
         },
         "/rfq/get/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of RFQs belonging to the given business",
                 "produces": [
                     "application/json"
@@ -4002,6 +4407,11 @@ const docTemplate = `{
         },
         "/rfq/update/status/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Toggles the active status of an RFQ by its ID",
                 "consumes": [
                     "application/json"
@@ -4061,6 +4471,11 @@ const docTemplate = `{
         },
         "/rfq/update/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the details of an existing RFQ by its ID",
                 "consumes": [
                     "application/json"
@@ -4120,6 +4535,11 @@ const docTemplate = `{
         },
         "/user/block/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the block status of the user with the given ID",
                 "consumes": [
                     "application/json"
@@ -4145,7 +4565,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.blockUserRequest"
+                            "$ref": "#/definitions/models.BlockUserRequest"
                         }
                     }
                 ],
@@ -4191,7 +4611,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.registerUserRequest"
+                            "$ref": "#/definitions/models.CreateAdminRequest"
                         }
                     }
                 ],
@@ -4222,6 +4642,11 @@ const docTemplate = `{
         },
         "/user/delete/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes the user with the given ID",
                 "produces": [
                     "application/json"
@@ -4269,6 +4694,11 @@ const docTemplate = `{
         },
         "/user/get/all": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a paginated list of all registered users",
                 "produces": [
                     "application/json"
@@ -4310,6 +4740,11 @@ const docTemplate = `{
         },
         "/user/get/user/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the details of the user with the given ID",
                 "produces": [
                     "application/json"
@@ -4376,7 +4811,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.getTokenByEmailPasswordRequest"
+                            "$ref": "#/definitions/models.LoginRequest"
                         }
                     }
                 ],
@@ -4410,6 +4845,11 @@ const docTemplate = `{
         },
         "/user/update/details/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the profile details of the user with the given ID",
                 "consumes": [
                     "application/json"
@@ -4435,7 +4875,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.updateUserProfileDetailsRequest"
+                            "$ref": "#/definitions/models.UpdateUserDetailsRequest"
                         }
                     }
                 ],
@@ -4463,6 +4903,11 @@ const docTemplate = `{
         },
         "/user/update/image/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns an S3 presigned URL to upload a profile image for the given user",
                 "produces": [
                     "application/json"
@@ -4495,6 +4940,11 @@ const docTemplate = `{
         },
         "/user/update/password/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates the password of the user with the given ID",
                 "consumes": [
                     "application/json"
@@ -4520,7 +4970,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.updatePasswordRequest"
+                            "$ref": "#/definitions/models.UpdatePasswordRequest"
                         }
                     }
                 ],
@@ -4588,28 +5038,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.blockUserRequest": {
-            "type": "object",
-            "properties": {
-                "is_user_blocked": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "handlers.getTokenByEmailPasswordRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "john@example.com"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "StrongPass@1"
-                }
-            }
-        },
         "handlers.productImageRequest": {
             "type": "object",
             "properties": {
@@ -4633,65 +5061,19 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.registerUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "john@example.com"
-                },
-                "first_name": {
-                    "type": "string",
-                    "example": "John"
-                },
-                "last_name": {
-                    "type": "string",
-                    "example": "Doe"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "StrongPass@1"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "9876543210"
-                }
-            }
-        },
-        "handlers.updatePasswordRequest": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string",
-                    "example": "NewPass@123"
-                }
-            }
-        },
-        "handlers.updateUserProfileDetailsRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "john@example.com"
-                },
-                "first_name": {
-                    "type": "string",
-                    "example": "John"
-                },
-                "last_name": {
-                    "type": "string",
-                    "example": "Doe"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "9876543210"
-                }
-            }
-        },
         "models.ActivateRFQRequest": {
             "type": "object",
             "properties": {
                 "is_rfq_active": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "models.BlockUserRequest": {
+            "type": "object",
+            "properties": {
+                "is_user_blocked": {
                     "type": "boolean",
                     "example": true
                 }
@@ -4703,6 +5085,31 @@ const docTemplate = `{
                 "is_product_active": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "models.CreateAdminRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "admin@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "9876543210"
                 }
             }
         },
@@ -4985,6 +5392,19 @@ const docTemplate = `{
                 }
             }
         },
+        "models.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                }
+            }
+        },
         "models.RateBusinessRequest": {
             "type": "object",
             "properties": {
@@ -5104,6 +5524,19 @@ const docTemplate = `{
                 }
             }
         },
+        "models.UpdatePasswordRequest": {
+            "type": "object",
+            "properties": {
+                "new_password": {
+                    "type": "string",
+                    "example": "newpass456"
+                },
+                "old_password": {
+                    "type": "string",
+                    "example": "oldpass123"
+                }
+            }
+        },
         "models.UpdateProductRequest": {
             "type": "object",
             "properties": {
@@ -5189,6 +5622,27 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Wheat"
+                }
+            }
+        },
+        "models.UpdateUserDetailsRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "9876543210"
                 }
             }
         }

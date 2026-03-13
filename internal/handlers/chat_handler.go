@@ -49,6 +49,7 @@ func NewChatHandler(chatStore store.ChatStore, h *hub.Hub, logger *log.Logger) *
 // @Description  Upgrades the connection to WebSocket. Pass ?user_id=<uuid>. Send JSON {"receiver_id":"...","content":"..."}; receive JSON Message objects in real-time.
 // @Tags         chat
 // @Param        user_id query string true "Authenticated user ID"
+// @Security     BearerAuth
 // @Router       /chat/ws [get]
 func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
@@ -162,6 +163,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 // @Success      201 {object} map[string]interface{} "Saved message with id and created_at"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /chat/send [post]
 func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
 	var req models.SendMessageRequest
@@ -217,6 +219,7 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /chat/history [get]
 func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Request) {
 	user1ID := r.URL.Query().Get("user1_id")
@@ -268,6 +271,7 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /chat/read [put]
 func (ch *ChatHandler) HandleMarkAsRead(w http.ResponseWriter, r *http.Request) {
 	senderID := r.URL.Query().Get("sender_id")

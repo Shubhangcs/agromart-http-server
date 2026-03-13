@@ -35,6 +35,7 @@ func NewProductRatingHandler(ratingStore store.ProductRatingStore, logger *log.L
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/rate [post]
 func (h *ProductRatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.RateProductRequest
@@ -80,6 +81,7 @@ func (h *ProductRatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/rate/average/{id} [get]
 func (h *ProductRatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -110,6 +112,7 @@ func (h *ProductRatingHandler) HandleGetAverageProductRating(w http.ResponseWrit
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/rate/get/{id} [get]
 func (h *ProductRatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -141,6 +144,7 @@ func (h *ProductRatingHandler) HandleGetProductRatings(w http.ResponseWriter, r 
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/rate/delete/{id} [delete]
 func (h *ProductRatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

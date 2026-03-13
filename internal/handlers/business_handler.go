@@ -79,6 +79,7 @@ func (bh *BusinessHandler) validateRateBusinessRequest(req *models.RateBusinessR
 // @Success      201 {object} map[string]interface{} "business_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/create [post]
 func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBusinessRequest
@@ -120,6 +121,7 @@ func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.R
 // @Success      201 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/social/create [post]
 func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSocialRequest
@@ -160,6 +162,7 @@ func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Req
 // @Success      201 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/legal/create [post]
 func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateLegalRequest
@@ -199,6 +202,7 @@ func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Requ
 // @Success      201 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/application/create [post]
 func (bh *BusinessHandler) HandleCreateBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateApplicationRequest
@@ -230,6 +234,7 @@ func (bh *BusinessHandler) HandleCreateBusinessApplication(w http.ResponseWriter
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/update/{id} [put]
 func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -272,6 +277,7 @@ func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.R
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/social/update/{id} [put]
 func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -313,6 +319,7 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/legal/update/{id} [put]
 func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -352,6 +359,7 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/application/accept/{id} [put]
 func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -383,6 +391,7 @@ func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/application/reject/{id} [put]
 func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -426,6 +435,7 @@ func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/get/complete/{id} [get]
 func (bh *BusinessHandler) HandleGetCompleteBusinessDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -456,6 +466,7 @@ func (bh *BusinessHandler) HandleGetCompleteBusinessDetails(w http.ResponseWrite
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/get/{id} [get]
 func (bh *BusinessHandler) HandleGetBusinessDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -486,6 +497,7 @@ func (bh *BusinessHandler) HandleGetBusinessDetails(w http.ResponseWriter, r *ht
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/social/get/{id} [get]
 func (bh *BusinessHandler) HandleGetSocialDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -516,6 +528,7 @@ func (bh *BusinessHandler) HandleGetSocialDetails(w http.ResponseWriter, r *http
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/legal/get/{id} [get]
 func (bh *BusinessHandler) HandleGetLegalDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -546,6 +559,7 @@ func (bh *BusinessHandler) HandleGetLegalDetails(w http.ResponseWriter, r *http.
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/application/get/{id} [get]
 func (bh *BusinessHandler) HandleGetBusinessApplicationDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -577,6 +591,7 @@ func (bh *BusinessHandler) HandleGetBusinessApplicationDetails(w http.ResponseWr
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/status/verify/{id} [put]
 func (bh *BusinessHandler) HandleUpdateVerifyBusinessStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -608,6 +623,7 @@ func (bh *BusinessHandler) HandleUpdateVerifyBusinessStatus(w http.ResponseWrite
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/status/trust/{id} [put]
 func (bh *BusinessHandler) HandleUpdateTrustBusinessStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -639,6 +655,7 @@ func (bh *BusinessHandler) HandleUpdateTrustBusinessStatus(w http.ResponseWriter
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/status/block/{id} [put]
 func (bh *BusinessHandler) HandleUpdateBlockBusinessStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -668,6 +685,7 @@ func (bh *BusinessHandler) HandleUpdateBlockBusinessStatus(w http.ResponseWriter
 // @Param        limit query int false "Items per page (default 20, max 100)"
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/get/all [get]
 func (bh *BusinessHandler) HandleGetAllBusinesses(w http.ResponseWriter, r *http.Request) {
 	pg := utils.ReadPaginationParams(r)
@@ -694,6 +712,7 @@ func (bh *BusinessHandler) HandleGetAllBusinesses(w http.ResponseWriter, r *http
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/delete/{id} [delete]
 func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -723,6 +742,7 @@ func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.R
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/get/user/{id} [get]
 func (bh *BusinessHandler) HandleGetBusinessIDByUserID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -752,6 +772,7 @@ func (bh *BusinessHandler) HandleGetBusinessIDByUserID(w http.ResponseWriter, r 
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/status/{id} [get]
 func (bh *BusinessHandler) HandleIsBusinessApproved(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -778,6 +799,7 @@ func (bh *BusinessHandler) HandleIsBusinessApproved(w http.ResponseWriter, r *ht
 // @Success      200 {object} MessageResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/rate [post]
 func (bh *BusinessHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.RateBusinessRequest
@@ -811,6 +833,7 @@ func (bh *BusinessHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Req
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/rate/average/{id} [get]
 func (bh *BusinessHandler) HandleGetAverageBusinessRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -839,6 +862,7 @@ func (bh *BusinessHandler) HandleGetAverageBusinessRating(w http.ResponseWriter,
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/rate/get/{id} [get]
 func (bh *BusinessHandler) HandleGetBusinessRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

@@ -62,7 +62,7 @@ type BusinessDetails struct {
 
 type BusinessRating struct {
 	ID         string    `json:"id"`
-	BusinessID string    `json:"busness_id"`
+	BusinessID string    `json:"business_id"`
 	UserID     string    `json:"user_id"`
 	UserName   string    `json:"user_name,omitempty"`
 	Rating     float64   `json:"rating"`

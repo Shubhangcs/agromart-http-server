@@ -37,6 +37,7 @@ func NewReviewHandler(reviewStore store.ReviewStore, logger *log.Logger) *Review
 // @Success      201 {object} map[string]interface{} "review_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/review/create [post]
 func (h *ReviewHandler) HandleCreateBusinessReview(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBusinessReviewRequest
@@ -85,6 +86,7 @@ func (h *ReviewHandler) HandleCreateBusinessReview(w http.ResponseWriter, r *htt
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/review/update/{id} [put]
 func (h *ReviewHandler) HandleUpdateBusinessReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -124,6 +126,7 @@ func (h *ReviewHandler) HandleUpdateBusinessReview(w http.ResponseWriter, r *htt
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/review/delete/{id} [delete]
 func (h *ReviewHandler) HandleDeleteBusinessReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -154,6 +157,7 @@ func (h *ReviewHandler) HandleDeleteBusinessReview(w http.ResponseWriter, r *htt
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /business/review/get/{id} [get]
 func (h *ReviewHandler) HandleGetBusinessReviews(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -187,6 +191,7 @@ func (h *ReviewHandler) HandleGetBusinessReviews(w http.ResponseWriter, r *http.
 // @Success      201 {object} map[string]interface{} "review_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/review/create [post]
 func (h *ReviewHandler) HandleCreateProductReview(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateProductReviewRequest
@@ -235,6 +240,7 @@ func (h *ReviewHandler) HandleCreateProductReview(w http.ResponseWriter, r *http
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/review/update/{id} [put]
 func (h *ReviewHandler) HandleUpdateProductReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -274,6 +280,7 @@ func (h *ReviewHandler) HandleUpdateProductReview(w http.ResponseWriter, r *http
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/review/delete/{id} [delete]
 func (h *ReviewHandler) HandleDeleteProductReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -304,6 +311,7 @@ func (h *ReviewHandler) HandleDeleteProductReview(w http.ResponseWriter, r *http
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/review/get/{id} [get]
 func (h *ReviewHandler) HandleGetProductReviews(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

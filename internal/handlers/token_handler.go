@@ -3,20 +3,16 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/tokens"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 )
-
-// getTokenByEmailPasswordRequest is the login payload.
-type getTokenByEmailPasswordRequest struct {
-	Email    string `json:"email"    example:"john@example.com"`
-	Password string `json:"password" example:"StrongPass@1"`
-}
 
 // TokenResponse represents a successful token response.
 type TokenResponse struct {
@@ -51,14 +47,14 @@ func fullName(first string, last *string) string {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        body body getTokenByEmailPasswordRequest true "Admin login credentials"
+// @Param        body body models.LoginRequest true "Admin login credentials"
 // @Success      200 {object} TokenResponse
 // @Failure      400 {object} ErrorResponse "Invalid request payload"
 // @Failure      401 {object} ErrorResponse "Invalid credentials"
 // @Failure      500 {object} ErrorResponse "Internal server error"
 // @Router       /admin/login [post]
 func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
-	var req getTokenByEmailPasswordRequest
+	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		th.logger.Printf("ERROR: admin login: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
@@ -67,7 +63,7 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 
 	admin, err := th.userStore.GetAdminByEmail(req.Email)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
@@ -103,14 +99,14 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        body body getTokenByEmailPasswordRequest true "User login credentials"
+// @Param        body body models.LoginRequest true "User login credentials"
 // @Success      200 {object} TokenResponse
 // @Failure      400 {object} ErrorResponse "Invalid request payload"
 // @Failure      401 {object} ErrorResponse "Invalid credentials"
 // @Failure      500 {object} ErrorResponse "Internal server error"
 // @Router       /user/login [post]
 func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
-	var req getTokenByEmailPasswordRequest
+	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		th.logger.Printf("ERROR: user login: %v\n", err)
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
@@ -119,7 +115,7 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 
 	user, err := th.userStore.GetUserByEmail(req.Email)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}

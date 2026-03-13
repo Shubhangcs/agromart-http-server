@@ -44,6 +44,7 @@ func NewBlobHandler(logger *log.Logger, blob *blob.AWSS3, blobStore store.BlobSt
 // @Success      200 {object} PresignedURLResponse
 // @Failure      400 {object} ErrorResponse "Invalid URL Param"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /admin/update/image/{id} [put]
 func (bh *BlobHandler) HandleUpdateAdminProfileImage(w http.ResponseWriter, r *http.Request) {
 	adminId, err := utils.ReadParamID(r)
@@ -78,6 +79,7 @@ func (bh *BlobHandler) HandleUpdateAdminProfileImage(w http.ResponseWriter, r *h
 // @Success      200 {object} PresignedURLResponse
 // @Failure      400 {object} ErrorResponse "Invalid URL Param"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /user/update/image/{id} [put]
 func (bh *BlobHandler) HandleUpdateUserProfileImage(w http.ResponseWriter, r *http.Request) {
 	userId, err := utils.ReadParamID(r)
@@ -113,6 +115,7 @@ func (bh *BlobHandler) HandleUpdateUserProfileImage(w http.ResponseWriter, r *ht
 // @Success      200 {object} PresignedURLResponse
 // @Failure      400 {object} ErrorResponse "Invalid URL Param"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /business/update/image/{id} [put]
 func (bh *BlobHandler) HandleUpdateBusinessProfileImage(w http.ResponseWriter, r *http.Request) {
 	businessId, err := utils.ReadParamID(r)
@@ -148,6 +151,7 @@ func (bh *BlobHandler) HandleUpdateBusinessProfileImage(w http.ResponseWriter, r
 // @Success      200 {object} PresignedURLResponse
 // @Failure      400 {object} ErrorResponse "Invalid URL Param"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /category/update/image/{id} [put]
 func (bh *BlobHandler) HandleUpdateCategoryImage(w http.ResponseWriter, r *http.Request) {
 	catId, err := utils.ReadParamID(r)
@@ -183,6 +187,7 @@ func (bh *BlobHandler) HandleUpdateCategoryImage(w http.ResponseWriter, r *http.
 // @Success      200 {object} PresignedURLResponse
 // @Failure      400 {object} ErrorResponse "Invalid URL Param"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /category/sub/update/image/{id} [put]
 func (bh *BlobHandler) HandleUpdateSubCategoryImage(w http.ResponseWriter, r *http.Request) {
 	catId, err := utils.ReadParamID(r)
@@ -253,6 +258,7 @@ func (pir *productImageRequest) validateDeleteProductImageRequest() error {
 // @Success      200 {object} PresignedURLResponse
 // @Failure      400 {object} ErrorResponse "Invalid payload or missing fields"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /product/update/image [put]
 func (bh *BlobHandler) HandleUpdateProductImage(w http.ResponseWriter, r *http.Request) {
 	var req productImageRequest
@@ -305,6 +311,7 @@ func (bh *BlobHandler) HandleUpdateProductImage(w http.ResponseWriter, r *http.R
 // @Success      200 {object} map[string]string{} "product image deleted successfully"
 // @Failure      400 {object} ErrorResponse "Invalid payload or missing fields"
 // @Failure      500 {object} ErrorResponse "Internal server error"
+// @Security     BearerAuth
 // @Router       /product/delete/image [delete]
 func (bh *BlobHandler) HandleDeleteProductImage(w http.ResponseWriter, r *http.Request) {
 	var req productImageRequest

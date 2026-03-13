@@ -66,6 +66,7 @@ func (ph *ProductHandler) validateCreateProductRequest(req *models.CreateProduct
 // @Success      201 {object} map[string]interface{} "product_id returned"
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/create [post]
 func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateProductRequest
@@ -110,6 +111,7 @@ func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Req
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/update/{id} [put]
 func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -155,6 +157,7 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/delete/{id} [delete]
 func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -186,6 +189,7 @@ func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Req
 // @Param        state query string false "Filter by business state (case-insensitive)"
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/get/all [get]
 func (ph *ProductHandler) HandleGetAllProducts(w http.ResponseWriter, r *http.Request) {
 	pg := utils.ReadPaginationParams(r)
@@ -214,6 +218,7 @@ func (ph *ProductHandler) HandleGetAllProducts(w http.ResponseWriter, r *http.Re
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/get/business/{id} [get]
 func (ph *ProductHandler) HandleGetBusinessProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -246,6 +251,7 @@ func (ph *ProductHandler) HandleGetBusinessProducts(w http.ResponseWriter, r *ht
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/get/category/{id} [get]
 func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -278,6 +284,7 @@ func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, 
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/get/sub/category/{id} [get]
 func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -310,6 +317,7 @@ func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWrite
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/get/followers/{id} [get]
 func (ph *ProductHandler) HandleGetFollowersProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -341,6 +349,7 @@ func (ph *ProductHandler) HandleGetFollowersProducts(w http.ResponseWriter, r *h
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/get/{id} [get]
 func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
@@ -373,6 +382,7 @@ func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
 // @Router       /product/update/status/{id} [patch]
 func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
