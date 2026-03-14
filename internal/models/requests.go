@@ -43,20 +43,6 @@ type BlockUserRequest struct {
 
 // --- Business DTOs ---
 
-// CreateBusinessRequest is the payload for creating a business profile.
-// swagger:model
-type CreateBusinessRequest struct {
-	UserID       string `json:"user_id"       validate:"required"              example:"user-uuid-001"`
-	Name         string `json:"name"          validate:"required"              example:"Agro Traders Pvt Ltd"`
-	Email        string `json:"email"         validate:"required,email"        example:"business@example.com"`
-	Phone        string `json:"phone"         validate:"required,min=7,max=15,numeric" example:"9876543210"`
-	Address      string `json:"address"       validate:"required"              example:"123 Market Street"`
-	City         string `json:"city"          validate:"required"              example:"Pune"`
-	State        string `json:"state"         validate:"required"              example:"Maharashtra"`
-	Pincode      string `json:"pincode"       validate:"required"              example:"411001"`
-	BusinessType string `json:"business_type" validate:"required"              example:"TRADER"`
-}
-
 // UpdateBusinessRequest is the payload for updating a business profile.
 // swagger:model
 type UpdateBusinessRequest struct {

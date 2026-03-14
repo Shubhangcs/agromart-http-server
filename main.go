@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/shubhangcs/agromart-server/internal/app"
+	"github.com/shubhangcs/agromart-server/internal/env"
 	"github.com/shubhangcs/agromart-server/internal/routes"
 )
 
@@ -23,9 +23,7 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8080, "server port")
-	flag.Parse()
+	port := env.GetInt("PORT", 8080)
 
 	application, err := app.NewApplication()
 	if err != nil {
@@ -43,18 +41,15 @@ func main() {
 		WriteTimeout:      30 * time.Second,
 	}
 
-	// Channel to receive OS shutdown signals.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start server in a goroutine so we can listen for signals concurrently.
 	serverErr := make(chan error, 1)
 	go func() {
 		application.Logger.Info("server listening", "port", port)
 		serverErr <- server.ListenAndServe()
 	}()
 
-	// Block until a signal or a fatal server error arrives.
 	select {
 	case err = <-serverErr:
 		if err != nil && err != http.ErrServerClosed {
@@ -62,9 +57,9 @@ func main() {
 			os.Exit(1)
 		}
 	case sig := <-quit:
-		application.Logger.Info("received signal — shutting down gracefully", "signal", sig)
+		application.Logger.Info("shutting down", "signal", sig)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
 		defer cancel()
 
 		if err = server.Shutdown(ctx); err != nil {

@@ -43,12 +43,11 @@ func NewReviewHandler(reviewStore store.ReviewStore, logger *slog.Logger) *Revie
 func (h *ReviewHandler) HandleCreateBusinessReview(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBusinessReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("create business review", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	rev := &models.BusinessReview{
@@ -57,8 +56,7 @@ func (h *ReviewHandler) HandleCreateBusinessReview(w http.ResponseWriter, r *htt
 		Review:     req.Review,
 	}
 	if err := h.reviewStore.CreateBusinessReview(rev); err != nil {
-		h.logger.Error("create business review", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "create business review", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{
@@ -84,17 +82,16 @@ func (h *ReviewHandler) HandleCreateBusinessReview(w http.ResponseWriter, r *htt
 func (h *ReviewHandler) HandleUpdateBusinessReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	var req models.UpdateReviewRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("update business review", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if err = h.reviewStore.UpdateBusinessReview(&models.BusinessReview{ID: id, Review: req.Review}); err != nil {
@@ -102,8 +99,7 @@ func (h *ReviewHandler) HandleUpdateBusinessReview(w http.ResponseWriter, r *htt
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "review not found"})
 			return
 		}
-		h.logger.Error("update business review", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "update business review", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business review updated successfully"})
@@ -124,7 +120,7 @@ func (h *ReviewHandler) HandleUpdateBusinessReview(w http.ResponseWriter, r *htt
 func (h *ReviewHandler) HandleDeleteBusinessReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if err = h.reviewStore.DeleteBusinessReview(id); err != nil {
@@ -132,8 +128,7 @@ func (h *ReviewHandler) HandleDeleteBusinessReview(w http.ResponseWriter, r *htt
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "review not found"})
 			return
 		}
-		h.logger.Error("delete business review", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "delete business review", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business review deleted successfully"})
@@ -155,14 +150,13 @@ func (h *ReviewHandler) HandleDeleteBusinessReview(w http.ResponseWriter, r *htt
 func (h *ReviewHandler) HandleGetBusinessReviews(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := h.reviewStore.GetBusinessReviews(id, pg.Limit, pg.Offset())
 	if err != nil {
-		h.logger.Error("get business reviews", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "get business reviews", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -189,12 +183,11 @@ func (h *ReviewHandler) HandleGetBusinessReviews(w http.ResponseWriter, r *http.
 func (h *ReviewHandler) HandleCreateProductReview(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateProductReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("create product review", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	rev := &models.ProductReview{
@@ -203,8 +196,7 @@ func (h *ReviewHandler) HandleCreateProductReview(w http.ResponseWriter, r *http
 		Review:    req.Review,
 	}
 	if err := h.reviewStore.CreateProductReview(rev); err != nil {
-		h.logger.Error("create product review", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "create product review", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{
@@ -230,17 +222,16 @@ func (h *ReviewHandler) HandleCreateProductReview(w http.ResponseWriter, r *http
 func (h *ReviewHandler) HandleUpdateProductReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	var req models.UpdateReviewRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("update product review", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if err = h.reviewStore.UpdateProductReview(&models.ProductReview{ID: id, Review: req.Review}); err != nil {
@@ -248,8 +239,7 @@ func (h *ReviewHandler) HandleUpdateProductReview(w http.ResponseWriter, r *http
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "review not found"})
 			return
 		}
-		h.logger.Error("update product review", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "update product review", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product review updated successfully"})
@@ -270,7 +260,7 @@ func (h *ReviewHandler) HandleUpdateProductReview(w http.ResponseWriter, r *http
 func (h *ReviewHandler) HandleDeleteProductReview(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if err = h.reviewStore.DeleteProductReview(id); err != nil {
@@ -278,8 +268,7 @@ func (h *ReviewHandler) HandleDeleteProductReview(w http.ResponseWriter, r *http
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "review not found"})
 			return
 		}
-		h.logger.Error("delete product review", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "delete product review", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product review deleted successfully"})
@@ -301,14 +290,13 @@ func (h *ReviewHandler) HandleDeleteProductReview(w http.ResponseWriter, r *http
 func (h *ReviewHandler) HandleGetProductReviews(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := h.reviewStore.GetProductReviews(id, pg.Limit, pg.Offset())
 	if err != nil {
-		h.logger.Error("get product reviews", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "get product reviews", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{

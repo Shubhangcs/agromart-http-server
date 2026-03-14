@@ -170,8 +170,8 @@ func productRoutes(app *app.Application, r *chi.Mux) {
 }
 
 func chatRoutes(app *app.Application, r *chi.Mux) {
-	// WebSocket endpoint — JWT in ?token= query param (browsers can't set headers on WS).
-	r.With(middlewares.AuthorizationMiddleware).Get("/chat/ws", app.ChatHandler.HandleWebSocket)
+	// WebSocket — no middleware; token is validated inside the handler via ?token= query param.
+	r.Get("/chat/ws", app.ChatHandler.HandleWebSocket)
 
 	r.Route("/chat", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)

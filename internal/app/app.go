@@ -97,7 +97,6 @@ func NewApplication() (*Application, error) {
 		RFQHandler:      rfqHandler,
 		ProductHandler:  productHandler,
 		RatingHandler:   ratingHandler,
-
 		ReviewHandler:   reviewHandler,
 		ChatHandler:     chatHandler,
 	}

@@ -49,14 +49,19 @@ func claimsFromCtx(r *http.Request) *tokens.Token {
 
 // HandleWebSocket godoc
 // @Summary      Real-time chat WebSocket
-// @Description  Upgrades the connection to WebSocket for the authenticated user. Identity is taken from the JWT token — not from any query parameter. Send JSON {"receiver_id":"...","content":"..."}; receive JSON Message objects in real-time.
+// @Description  Upgrades the connection to WebSocket. Pass the JWT as ?token=<jwt> query param — most WS clients cannot set Authorization headers during the handshake. Send JSON {"receiver_id":"...","content":"..."}; receive JSON Message objects in real-time.
 // @Tags         chat
-// @Security     BearerAuth
+// @Param        token query string true "JWT access token"
 // @Router       /chat/ws [get]
 func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	claims := claimsFromCtx(r)
-	if claims == nil {
-		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "unauthorized"})
+	rawToken := r.URL.Query().Get("token")
+	if rawToken == "" {
+		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "missing token"})
+		return
+	}
+	claims, err := tokens.ValidateToken(rawToken)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid or expired token"})
 		return
 	}
 	userID := claims.UserID
@@ -180,15 +185,15 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 
 	var req models.SendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if req.ReceiverID == senderID {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "cannot send a message to yourself"})
+		badRequest(w, "cannot send a message to yourself")
 		return
 	}
 
@@ -198,8 +203,7 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 		Content:    req.Content,
 	}
 	if err := ch.chatStore.SaveMessage(msg); err != nil {
-		ch.logger.Error("send message", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, ch.logger, "send message", err)
 		return
 	}
 
@@ -234,7 +238,7 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 
 	withUserID := r.URL.Query().Get("with_user_id")
 	if withUserID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "with_user_id is required"})
+		badRequest(w, "with_user_id is required")
 		return
 	}
 
@@ -248,8 +252,7 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 			})
 			return
 		}
-		ch.logger.Error("get chat history", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, ch.logger, "get chat history", err)
 		return
 	}
 
@@ -285,13 +288,12 @@ func (ch *ChatHandler) HandleMarkAsRead(w http.ResponseWriter, r *http.Request) 
 
 	senderID := r.URL.Query().Get("sender_id")
 	if senderID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "sender_id is required"})
+		badRequest(w, "sender_id is required")
 		return
 	}
 
 	if err := ch.chatStore.MarkAsRead(senderID, receiverID); err != nil {
-		ch.logger.Error("mark as read", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, ch.logger, "mark as read", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "messages marked as read"})

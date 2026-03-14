@@ -41,12 +41,11 @@ func NewRatingHandler(ratingStore store.RatingStore, logger *slog.Logger) *Ratin
 func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.RateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("rate product", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	rating := &models.ProductRating{
@@ -55,8 +54,7 @@ func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request
 		Rating:    req.Rating,
 	}
 	if err := h.ratingStore.RateProduct(rating); err != nil {
-		h.logger.Error("rate product", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "rate product", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -79,13 +77,12 @@ func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request
 func (h *RatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	avg, err := h.ratingStore.GetAverageProductRating(id)
 	if err != nil {
-		h.logger.Error("get average product rating", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "get average product rating", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -110,14 +107,13 @@ func (h *RatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *
 func (h *RatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := h.ratingStore.GetRatingsByProductID(id, pg.Limit, pg.Offset())
 	if err != nil {
-		h.logger.Error("get product ratings", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "get product ratings", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -142,7 +138,7 @@ func (h *RatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.R
 func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if err = h.ratingStore.DeleteProductRating(id); err != nil {
@@ -150,8 +146,7 @@ func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rating not found"})
 			return
 		}
-		h.logger.Error("delete product rating", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "delete product rating", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product rating deleted successfully"})
@@ -172,12 +167,11 @@ func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http
 func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.RateBusinessRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("rate business", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	if err := h.ratingStore.RateBusiness(&models.BusinessRating{
@@ -185,8 +179,7 @@ func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Reques
 		UserID:     req.UserID,
 		Rating:     req.Rating,
 	}); err != nil {
-		h.logger.Error("rate business", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "rate business", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business rated successfully"})
@@ -206,13 +199,12 @@ func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Reques
 func (h *RatingHandler) HandleGetAverageBusinessRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	avg, err := h.ratingStore.GetAverageBusinessRating(id)
 	if err != nil {
-		h.logger.Error("get average business rating", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "get average business rating", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -235,13 +227,12 @@ func (h *RatingHandler) HandleGetAverageBusinessRating(w http.ResponseWriter, r 
 func (h *RatingHandler) HandleGetBusinessRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 	res, err := h.ratingStore.GetRatingsByBusinessID(id)
 	if err != nil {
-		h.logger.Error("get business ratings", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, h.logger, "get business ratings", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{

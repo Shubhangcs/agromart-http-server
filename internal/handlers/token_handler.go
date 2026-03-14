@@ -57,12 +57,11 @@ func fullName(first string, last *string) string {
 func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		th.logger.Error("admin login", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 
@@ -72,15 +71,13 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
-		th.logger.Error("admin login", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "admin login", err)
 		return
 	}
 
 	matched, err := admin.Password.Matches(req.Password)
 	if err != nil {
-		th.logger.Error("admin login: password comparison", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "admin login: password comparison", err)
 		return
 	}
 	if !matched {
@@ -90,8 +87,7 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 
 	token, err := tokens.GenerateNewToken(admin.ID, fullName(admin.FirstName, admin.LastName), nil)
 	if err != nil {
-		th.logger.Error("admin login: token generation", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "admin login: token generation", err)
 		return
 	}
 
@@ -113,12 +109,11 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		th.logger.Error("user login", "error", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		badRequest(w, "invalid request payload")
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		badRequest(w, err.Error())
 		return
 	}
 
@@ -128,15 +123,13 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
-		th.logger.Error("user login", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "user login", err)
 		return
 	}
 
 	matched, err := user.Password.Matches(req.Password)
 	if err != nil {
-		th.logger.Error("user login: password comparison", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "user login: password comparison", err)
 		return
 	}
 	if !matched {
@@ -146,15 +139,13 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 
 	businessID, err := th.businessStore.GetBusinessIDByUserID(user.ID)
 	if err != nil {
-		th.logger.Error("user login: fetch business id", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "user login: fetch business id", err)
 		return
 	}
 
 	token, err := tokens.GenerateNewToken(user.ID, fullName(user.FirstName, user.LastName), businessID)
 	if err != nil {
-		th.logger.Error("user login: token generation", "error", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		serverError(w, th.logger, "user login: token generation", err)
 		return
 	}
 
