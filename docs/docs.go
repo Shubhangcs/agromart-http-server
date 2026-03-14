@@ -594,58 +594,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/business/create": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a new business profile for a user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "businesses"
-                ],
-                "summary": "Create a business",
-                "parameters": [
-                    {
-                        "description": "Business creation payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.CreateBusinessRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "business_id returned",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/business/delete/{id}": {
             "delete": {
                 "security": [
@@ -2549,7 +2497,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all messages exchanged between two users, ordered oldest to newest",
+                "description": "Returns all messages exchanged between the authenticated user and another user (with_user_id). Only the two participants can fetch this conversation.",
                 "produces": [
                     "application/json"
                 ],
@@ -2560,15 +2508,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "First user ID",
-                        "name": "user1_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Second user ID",
-                        "name": "user2_id",
+                        "description": "The other participant's user ID",
+                        "name": "with_user_id",
                         "in": "query",
                         "required": true
                     },
@@ -2599,6 +2540,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -2615,7 +2562,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Marks all unread messages from sender_id to receiver_id as read",
+                "description": "Marks all unread messages from sender_id (the other user) to the authenticated user as read.",
                 "produces": [
                     "application/json"
                 ],
@@ -2626,15 +2573,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Sender user ID",
+                        "description": "The user who sent the messages",
                         "name": "sender_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Receiver user ID",
-                        "name": "receiver_id",
                         "in": "query",
                         "required": true
                     }
@@ -2648,6 +2588,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2668,7 +2614,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sends a text message from one user to another and persists it in the database",
+                "description": "Sends a text message to another user. The sender identity is taken from the JWT token — the request body only needs receiver_id and content.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2678,7 +2624,7 @@ const docTemplate = `{
                 "tags": [
                     "chat"
                 ],
-                "summary": "Send a message",
+                "summary": "Send a message (REST fallback)",
                 "parameters": [
                     {
                         "description": "Message payload",
@@ -2692,7 +2638,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Saved message with id and created_at",
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2700,6 +2646,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -2715,12 +2667,7 @@ const docTemplate = `{
         },
         "/chat/ws": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Upgrades the connection to WebSocket. Pass ?user_id=\u003cuuid\u003e. Send JSON {\"receiver_id\":\"...\",\"content\":\"...\"}; receive JSON Message objects in real-time.",
+                "description": "Upgrades the connection to WebSocket. Pass the JWT as ?token=\u003cjwt\u003e query param — most WS clients cannot set Authorization headers during the handshake. Send JSON {\"receiver_id\":\"...\",\"content\":\"...\"}; receive JSON Message objects in real-time.",
                 "tags": [
                     "chat"
                 ],
@@ -2728,64 +2675,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Authenticated user ID",
-                        "name": "user_id",
+                        "description": "JWT access token",
+                        "name": "token",
                         "in": "query",
                         "required": true
                     }
                 ],
                 "responses": {}
-            }
-        },
-        "/follower/follow": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a follower relationship between a user and a business (idempotent)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "followers"
-                ],
-                "summary": "Follow a business",
-                "parameters": [
-                    {
-                        "description": "Follow payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.FollowRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
             }
         },
         "/follower/get/followers/count/{id}": {
@@ -4995,6 +4891,214 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/wishlist/add": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds a product to the authenticated user's wishlist. Adding the same product twice is silently ignored.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wishlist"
+                ],
+                "summary": "Add product to wishlist",
+                "parameters": [
+                    {
+                        "description": "Product to add",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddToWishlistRequestModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/wishlist/check/{product_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns whether a specific product is already saved in the authenticated user's wishlist.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wishlist"
+                ],
+                "summary": "Check if product is in wishlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "product_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/wishlist/get": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all products saved in the authenticated user's wishlist, with product details.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wishlist"
+                ],
+                "summary": "Get user wishlist",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/wishlist/remove/{product_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes a product from the authenticated user's wishlist.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wishlist"
+                ],
+                "summary": "Remove product from wishlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "product_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -5070,6 +5174,18 @@ const docTemplate = `{
                 }
             }
         },
+        "models.AddToWishlistRequestModel": {
+            "type": "object",
+            "required": [
+                "product_id"
+            ],
+            "properties": {
+                "product_id": {
+                    "type": "string",
+                    "example": "prod-uuid-001"
+                }
+            }
+        },
         "models.BlockUserRequest": {
             "type": "object",
             "properties": {
@@ -5090,6 +5206,12 @@ const docTemplate = `{
         },
         "models.CreateAdminRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "password",
+                "phone"
+            ],
             "properties": {
                 "email": {
                     "type": "string",
@@ -5105,16 +5227,22 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
+                    "minLength": 8,
                     "example": "secret123"
                 },
                 "phone": {
                     "type": "string",
+                    "maxLength": 15,
+                    "minLength": 7,
                     "example": "9876543210"
                 }
             }
         },
         "models.CreateApplicationRequest": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "id": {
                     "type": "string",
@@ -5122,49 +5250,13 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateBusinessRequest": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string",
-                    "example": "123 Market Street"
-                },
-                "business_type": {
-                    "type": "string",
-                    "example": "TRADER"
-                },
-                "city": {
-                    "type": "string",
-                    "example": "Pune"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "business@example.com"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Agro Traders Pvt Ltd"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "9876543210"
-                },
-                "pincode": {
-                    "type": "string",
-                    "example": "411001"
-                },
-                "state": {
-                    "type": "string",
-                    "example": "Maharashtra"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "user-uuid-001"
-                }
-            }
-        },
         "models.CreateBusinessReviewRequest": {
             "type": "object",
+            "required": [
+                "business_id",
+                "review",
+                "user_id"
+            ],
             "properties": {
                 "business_id": {
                     "type": "string",
@@ -5182,6 +5274,10 @@ const docTemplate = `{
         },
         "models.CreateCategoryRequest": {
             "type": "object",
+            "required": [
+                "description",
+                "name"
+            ],
             "properties": {
                 "description": {
                     "type": "string",
@@ -5195,6 +5291,9 @@ const docTemplate = `{
         },
         "models.CreateLegalRequest": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "aadhaar": {
                     "type": "string",
@@ -5228,6 +5327,15 @@ const docTemplate = `{
         },
         "models.CreateProductRequest": {
             "type": "object",
+            "required": [
+                "business_id",
+                "category_id",
+                "description",
+                "moq",
+                "name",
+                "sub_category_id",
+                "unit"
+            ],
             "properties": {
                 "business_id": {
                     "type": "string",
@@ -5273,6 +5381,11 @@ const docTemplate = `{
         },
         "models.CreateProductReviewRequest": {
             "type": "object",
+            "required": [
+                "product_id",
+                "review",
+                "user_id"
+            ],
             "properties": {
                 "product_id": {
                     "type": "string",
@@ -5290,6 +5403,13 @@ const docTemplate = `{
         },
         "models.CreateRFQRequest": {
             "type": "object",
+            "required": [
+                "business_id",
+                "category_id",
+                "product_name",
+                "sub_category_id",
+                "unit"
+            ],
             "properties": {
                 "business_id": {
                     "type": "string",
@@ -5327,6 +5447,9 @@ const docTemplate = `{
         },
         "models.CreateSocialRequest": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "facebook": {
                     "type": "string",
@@ -5364,6 +5487,11 @@ const docTemplate = `{
         },
         "models.CreateSubCategoryRequest": {
             "type": "object",
+            "required": [
+                "category_id",
+                "description",
+                "name"
+            ],
             "properties": {
                 "category_id": {
                     "type": "string",
@@ -5381,6 +5509,10 @@ const docTemplate = `{
         },
         "models.FollowRequest": {
             "type": "object",
+            "required": [
+                "business_id",
+                "user_id"
+            ],
             "properties": {
                 "business_id": {
                     "type": "string",
@@ -5394,6 +5526,10 @@ const docTemplate = `{
         },
         "models.LoginRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
                     "type": "string",
@@ -5407,6 +5543,10 @@ const docTemplate = `{
         },
         "models.RateBusinessRequest": {
             "type": "object",
+            "required": [
+                "business_id",
+                "user_id"
+            ],
             "properties": {
                 "business_id": {
                     "type": "string",
@@ -5414,6 +5554,7 @@ const docTemplate = `{
                 },
                 "rating": {
                     "type": "number",
+                    "maximum": 5,
                     "example": 4.5
                 },
                 "user_id": {
@@ -5424,6 +5565,10 @@ const docTemplate = `{
         },
         "models.RateProductRequest": {
             "type": "object",
+            "required": [
+                "product_id",
+                "user_id"
+            ],
             "properties": {
                 "product_id": {
                     "type": "string",
@@ -5431,6 +5576,8 @@ const docTemplate = `{
                 },
                 "rating": {
                     "type": "number",
+                    "maximum": 5,
+                    "minimum": 0.5,
                     "example": 4.5
                 },
                 "user_id": {
@@ -5441,6 +5588,9 @@ const docTemplate = `{
         },
         "models.RejectApplicationRequest": {
             "type": "object",
+            "required": [
+                "reject_reason"
+            ],
             "properties": {
                 "reject_reason": {
                     "type": "string",
@@ -5450,6 +5600,10 @@ const docTemplate = `{
         },
         "models.SendMessageRequest": {
             "type": "object",
+            "required": [
+                "content",
+                "receiver_id"
+            ],
             "properties": {
                 "content": {
                     "type": "string",
@@ -5458,10 +5612,6 @@ const docTemplate = `{
                 "receiver_id": {
                     "type": "string",
                     "example": "user-uuid-002"
-                },
-                "sender_id": {
-                    "type": "string",
-                    "example": "user-uuid-001"
                 }
             }
         },
@@ -5490,6 +5640,8 @@ const docTemplate = `{
                 },
                 "phone": {
                     "type": "string",
+                    "maxLength": 15,
+                    "minLength": 7,
                     "example": "9876543210"
                 },
                 "pincode": {
@@ -5526,9 +5678,14 @@ const docTemplate = `{
         },
         "models.UpdatePasswordRequest": {
             "type": "object",
+            "required": [
+                "new_password",
+                "old_password"
+            ],
             "properties": {
                 "new_password": {
                     "type": "string",
+                    "minLength": 8,
                     "example": "newpass456"
                 },
                 "old_password": {
@@ -5605,6 +5762,9 @@ const docTemplate = `{
         },
         "models.UpdateReviewRequest": {
             "type": "object",
+            "required": [
+                "review"
+            ],
             "properties": {
                 "review": {
                     "type": "string",
@@ -5642,6 +5802,8 @@ const docTemplate = `{
                 },
                 "phone": {
                     "type": "string",
+                    "maxLength": 15,
+                    "minLength": 7,
                     "example": "9876543210"
                 }
             }

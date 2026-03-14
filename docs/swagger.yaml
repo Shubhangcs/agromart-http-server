@@ -48,6 +48,14 @@ definitions:
         example: true
         type: boolean
     type: object
+  models.AddToWishlistRequestModel:
+    properties:
+      product_id:
+        example: prod-uuid-001
+        type: string
+    required:
+    - product_id
+    type: object
   models.BlockUserRequest:
     properties:
       is_user_blocked:
@@ -73,46 +81,26 @@ definitions:
         type: string
       password:
         example: secret123
+        minLength: 8
         type: string
       phone:
         example: "9876543210"
+        maxLength: 15
+        minLength: 7
         type: string
+    required:
+    - email
+    - first_name
+    - password
+    - phone
     type: object
   models.CreateApplicationRequest:
     properties:
       id:
         example: biz-uuid-001
         type: string
-    type: object
-  models.CreateBusinessRequest:
-    properties:
-      address:
-        example: 123 Market Street
-        type: string
-      business_type:
-        example: TRADER
-        type: string
-      city:
-        example: Pune
-        type: string
-      email:
-        example: business@example.com
-        type: string
-      name:
-        example: Agro Traders Pvt Ltd
-        type: string
-      phone:
-        example: "9876543210"
-        type: string
-      pincode:
-        example: "411001"
-        type: string
-      state:
-        example: Maharashtra
-        type: string
-      user_id:
-        example: user-uuid-001
-        type: string
+    required:
+    - id
     type: object
   models.CreateBusinessReviewRequest:
     properties:
@@ -125,6 +113,10 @@ definitions:
       user_id:
         example: user-uuid-001
         type: string
+    required:
+    - business_id
+    - review
+    - user_id
     type: object
   models.CreateCategoryRequest:
     properties:
@@ -134,6 +126,9 @@ definitions:
       name:
         example: Grains
         type: string
+    required:
+    - description
+    - name
     type: object
   models.CreateLegalRequest:
     properties:
@@ -158,6 +153,8 @@ definitions:
       pan:
         example: ABCDE1234F
         type: string
+    required:
+    - id
     type: object
   models.CreateProductRequest:
     properties:
@@ -191,6 +188,14 @@ definitions:
       unit:
         example: kg
         type: string
+    required:
+    - business_id
+    - category_id
+    - description
+    - moq
+    - name
+    - sub_category_id
+    - unit
     type: object
   models.CreateProductReviewRequest:
     properties:
@@ -203,6 +208,10 @@ definitions:
       user_id:
         example: user-uuid-001
         type: string
+    required:
+    - product_id
+    - review
+    - user_id
     type: object
   models.CreateRFQRequest:
     properties:
@@ -230,6 +239,12 @@ definitions:
       unit:
         example: kg
         type: string
+    required:
+    - business_id
+    - category_id
+    - product_name
+    - sub_category_id
+    - unit
     type: object
   models.CreateSocialRequest:
     properties:
@@ -257,6 +272,8 @@ definitions:
       youtube:
         example: https://youtube.com/agro
         type: string
+    required:
+    - id
     type: object
   models.CreateSubCategoryRequest:
     properties:
@@ -269,6 +286,10 @@ definitions:
       name:
         example: Wheat
         type: string
+    required:
+    - category_id
+    - description
+    - name
     type: object
   models.FollowRequest:
     properties:
@@ -278,6 +299,9 @@ definitions:
       user_id:
         example: user-uuid-001
         type: string
+    required:
+    - business_id
+    - user_id
     type: object
   models.LoginRequest:
     properties:
@@ -287,6 +311,9 @@ definitions:
       password:
         example: secret123
         type: string
+    required:
+    - email
+    - password
     type: object
   models.RateBusinessRequest:
     properties:
@@ -295,10 +322,14 @@ definitions:
         type: string
       rating:
         example: 4.5
+        maximum: 5
         type: number
       user_id:
         example: user-uuid-001
         type: string
+    required:
+    - business_id
+    - user_id
     type: object
   models.RateProductRequest:
     properties:
@@ -307,16 +338,23 @@ definitions:
         type: string
       rating:
         example: 4.5
+        maximum: 5
+        minimum: 0.5
         type: number
       user_id:
         example: user-uuid-001
         type: string
+    required:
+    - product_id
+    - user_id
     type: object
   models.RejectApplicationRequest:
     properties:
       reject_reason:
         example: Documents incomplete
         type: string
+    required:
+    - reject_reason
     type: object
   models.SendMessageRequest:
     properties:
@@ -326,9 +364,9 @@ definitions:
       receiver_id:
         example: user-uuid-002
         type: string
-      sender_id:
-        example: user-uuid-001
-        type: string
+    required:
+    - content
+    - receiver_id
     type: object
   models.UpdateBusinessRequest:
     properties:
@@ -349,6 +387,8 @@ definitions:
         type: string
       phone:
         example: "9876543210"
+        maxLength: 15
+        minLength: 7
         type: string
       pincode:
         example: "411001"
@@ -376,10 +416,14 @@ definitions:
     properties:
       new_password:
         example: newpass456
+        minLength: 8
         type: string
       old_password:
         example: oldpass123
         type: string
+    required:
+    - new_password
+    - old_password
     type: object
   models.UpdateProductRequest:
     properties:
@@ -434,6 +478,8 @@ definitions:
       review:
         example: Updated review text
         type: string
+    required:
+    - review
     type: object
   models.UpdateSubCategoryRequest:
     properties:
@@ -457,6 +503,8 @@ definitions:
         type: string
       phone:
         example: "9876543210"
+        maxLength: 15
+        minLength: 7
         type: string
     type: object
 host: localhost:8080
@@ -839,39 +887,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Reject a business application
-      tags:
-      - businesses
-  /business/create:
-    post:
-      consumes:
-      - application/json
-      description: Creates a new business profile for a user
-      parameters:
-      - description: Business creation payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateBusinessRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: business_id returned
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create a business
       tags:
       - businesses
   /business/delete/{id}:
@@ -2093,17 +2108,12 @@ paths:
       - Image Upload
   /chat/history:
     get:
-      description: Returns all messages exchanged between two users, ordered oldest
-        to newest
+      description: Returns all messages exchanged between the authenticated user and
+        another user (with_user_id). Only the two participants can fetch this conversation.
       parameters:
-      - description: First user ID
+      - description: The other participant's user ID
         in: query
-        name: user1_id
-        required: true
-        type: string
-      - description: Second user ID
-        in: query
-        name: user2_id
+        name: with_user_id
         required: true
         type: string
       - description: Page number (default 1)
@@ -2126,6 +2136,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -2137,16 +2151,12 @@ paths:
       - chat
   /chat/read:
     put:
-      description: Marks all unread messages from sender_id to receiver_id as read
+      description: Marks all unread messages from sender_id (the other user) to the
+        authenticated user as read.
       parameters:
-      - description: Sender user ID
+      - description: The user who sent the messages
         in: query
         name: sender_id
-        required: true
-        type: string
-      - description: Receiver user ID
-        in: query
-        name: receiver_id
         required: true
         type: string
       produces:
@@ -2158,6 +2168,10 @@ paths:
             $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
         "500":
@@ -2173,8 +2187,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Sends a text message from one user to another and persists it in
-        the database
+      description: Sends a text message to another user. The sender identity is taken
+        from the JWT token — the request body only needs receiver_id and content.
       parameters:
       - description: Message payload
         in: body
@@ -2186,7 +2200,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: Saved message with id and created_at
+          description: Created
           schema:
             additionalProperties: true
             type: object
@@ -2194,64 +2208,35 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Send a message
+      summary: Send a message (REST fallback)
       tags:
       - chat
   /chat/ws:
     get:
-      description: Upgrades the connection to WebSocket. Pass ?user_id=<uuid>. Send
-        JSON {"receiver_id":"...","content":"..."}; receive JSON Message objects in
-        real-time.
+      description: Upgrades the connection to WebSocket. Pass the JWT as ?token=<jwt>
+        query param — most WS clients cannot set Authorization headers during the
+        handshake. Send JSON {"receiver_id":"...","content":"..."}; receive JSON Message
+        objects in real-time.
       parameters:
-      - description: Authenticated user ID
+      - description: JWT access token
         in: query
-        name: user_id
+        name: token
         required: true
         type: string
       responses: {}
-      security:
-      - BearerAuth: []
       summary: Real-time chat WebSocket
       tags:
       - chat
-  /follower/follow:
-    post:
-      consumes:
-      - application/json
-      description: Creates a follower relationship between a user and a business (idempotent)
-      parameters:
-      - description: Follow payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.FollowRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Follow a business
-      tags:
-      - followers
   /follower/get/followers/{id}:
     get:
       description: Returns a paginated list of all users following the given business
@@ -3675,6 +3660,141 @@ paths:
       summary: Update user password
       tags:
       - users
+  /wishlist/add:
+    post:
+      consumes:
+      - application/json
+      description: Adds a product to the authenticated user's wishlist. Adding the
+        same product twice is silently ignored.
+      parameters:
+      - description: Product to add
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddToWishlistRequestModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add product to wishlist
+      tags:
+      - wishlist
+  /wishlist/check/{product_id}:
+    get:
+      description: Returns whether a specific product is already saved in the authenticated
+        user's wishlist.
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check if product is in wishlist
+      tags:
+      - wishlist
+  /wishlist/get:
+    get:
+      description: Returns all products saved in the authenticated user's wishlist,
+        with product details.
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user wishlist
+      tags:
+      - wishlist
+  /wishlist/remove/{product_id}:
+    delete:
+      description: Removes a product from the authenticated user's wishlist.
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove product from wishlist
+      tags:
+      - wishlist
 securityDefinitions:
   BearerAuth:
     in: header

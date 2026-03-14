@@ -34,6 +34,7 @@ type Application struct {
 	RatingHandler   *handlers.RatingHandler
 	ReviewHandler   *handlers.ReviewHandler
 	ChatHandler     *handlers.ChatHandler
+	WishlistHandler *handlers.WishlistHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -84,6 +85,7 @@ func NewApplication() (*Application, error) {
 	ratingStore := store.NewPostgresRatingStore(pgdb)
 	reviewStore := store.NewPostgresReviewStore(pgdb)
 	chatStore := store.NewPostgresChatStore(pgdb)
+	wishlistStore := store.NewPostgresWishlistStore(pgdb)
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userStore, logger)
@@ -98,6 +100,7 @@ func NewApplication() (*Application, error) {
 	reviewHandler := handlers.NewReviewHandler(reviewStore, logger)
 	wsHub := hub.NewHub()
 	chatHandler := handlers.NewChatHandler(chatStore, wsHub, logger)
+	wishlistHandler := handlers.NewWishlistHandler(wishlistStore, logger)
 
 	// Creating a object of application struct
 	app := &Application{
@@ -116,6 +119,7 @@ func NewApplication() (*Application, error) {
 		RatingHandler:   ratingHandler,
 		ReviewHandler:   reviewHandler,
 		ChatHandler:     chatHandler,
+		WishlistHandler: wishlistHandler,
 	}
 
 	return app, nil
