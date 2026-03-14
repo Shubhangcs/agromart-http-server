@@ -79,26 +79,43 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	ch.hub.Register(client)
 
-	// Write pump — forwards queued messages to the WebSocket connection.
-	go func() {
-		defer conn.Close()
-		for payload := range client.Send {
-			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
-				ch.logger.Error("ws write", "user_id", userID, "error", err)
-				return
+	// Push any unread messages that arrived before this connection was opened.
+	if unread, err := ch.chatStore.GetUnreadMessages(userID); err == nil {
+		for _, msg := range unread {
+			payload, _ := json.Marshal(msg)
+			select {
+			case client.Send <- payload:
+			default:
 			}
 		}
-	}()
+	}
 
-	// Ping ticker — keeps the connection alive.
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
+	// Write pump — the ONLY goroutine that writes to the connection.
+	// Ping frames are sent from here too so there is never a concurrent writer.
 	go func() {
-		for range ticker.C {
-			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
+		ticker := time.NewTicker(30 * time.Second)
+		defer func() {
+			ticker.Stop()
+			conn.Close()
+		}()
+		for {
+			select {
+			case payload, ok := <-client.Send:
+				if !ok {
+					// Channel closed — send a clean close frame and exit.
+					conn.WriteMessage(websocket.CloseMessage, []byte{})
+					return
+				}
+				conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+				if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+					ch.logger.Error("ws write", "user_id", userID, "error", err)
+					return
+				}
+			case <-ticker.C:
+				conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					return
+				}
 			}
 		}
 	}()

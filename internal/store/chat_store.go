@@ -15,6 +15,8 @@ type ChatStore interface {
 	SaveMessage(*models.Message) error
 	// GetChatHistory returns all messages between two users ordered oldest→newest.
 	GetChatHistory(user1ID, user2ID string, limit, offset int) ([]models.Message, error)
+	// GetUnreadMessages returns all unread messages where the given user is the receiver.
+	GetUnreadMessages(userID string) ([]models.Message, error)
 	// MarkAsRead marks all unread messages sent to receiverID from senderID as read.
 	MarkAsRead(senderID, receiverID string) error
 }
@@ -45,6 +47,34 @@ func (cs *PostgresChatStore) GetChatHistory(user1ID, user2ID string, limit, offs
 	LIMIT $3 OFFSET $4
 	`
 	rows, err := cs.db.Query(query, user1ID, user2ID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []models.Message
+	for rows.Next() {
+		var msg models.Message
+		if err = rows.Scan(
+			&msg.ID, &msg.SenderID, &msg.ReceiverID,
+			&msg.Content, &msg.IsRead, &msg.CreatedAT,
+		); err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+	return messages, rows.Err()
+}
+
+// GetUnreadMessages returns all unread messages for a given receiver, oldest first.
+func (cs *PostgresChatStore) GetUnreadMessages(userID string) ([]models.Message, error) {
+	query := `
+	SELECT id, sender_id, receiver_id, content, is_read, created_at
+	FROM messages
+	WHERE receiver_id = $1 AND is_read = FALSE
+	ORDER BY created_at ASC
+	`
+	rows, err := cs.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -1,11 +1,13 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/shubhangcs/agromart-server/internal/blob"
@@ -42,6 +44,21 @@ func NewApplication() (*Application, error) {
 	pgdb, err := store.Open()
 	if err != nil {
 		return nil, err
+	}
+
+	// Connection pool tuning
+	pgdb.SetMaxOpenConns(25)
+	pgdb.SetMaxIdleConns(10)
+	pgdb.SetConnMaxLifetime(5 * time.Minute)
+	pgdb.SetConnMaxIdleTime(2 * time.Minute)
+
+	// Fail fast if DB is unreachable
+	{
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := pgdb.PingContext(ctx); err != nil {
+			return nil, fmt.Errorf("database unreachable: %w", err)
+		}
 	}
 
 	// Migrate
@@ -105,11 +122,17 @@ func NewApplication() (*Application, error) {
 }
 
 func (a *Application) HealthCheck(w http.ResponseWriter, r *http.Request) {
-	if err := a.DB.Ping(); err != nil {
-		a.Logger.Error("healthCheck", "error", err.Error())
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"status": fmt.Sprintf("error: %s", err.Error())})
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	if err := a.DB.PingContext(ctx); err != nil {
+		utils.WriteJSON(w, http.StatusServiceUnavailable, utils.Envelope{
+			"status": "unhealthy",
+			"db":     "unreachable",
+		})
 		return
 	}
-	a.Logger.Info("healthCheck: system is healthy")
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"status": "system is healthy"})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"status": "healthy",
+		"db":     "ok",
+	})
 }

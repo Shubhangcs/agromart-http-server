@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,30 +15,43 @@ import (
 func SetupRoutes(app *app.Application) *chi.Mux {
 	r := chi.NewRouter()
 
-	// Global middlewares — applied to every request.
-	r.Use(middleware.RequestID)                       // inject X-Request-ID header
-	r.Use(middleware.RealIP)                          // use X-Real-IP / X-Forwarded-For
-	r.Use(middleware.Logger)                          // structured access log
-	r.Use(middlewares.RecoveryMiddleware(app.Logger)) // panic → 500, never crash
-	r.Use(middlewares.CORSMiddleware)                 // CORS headers
-	r.Use(middleware.Timeout(30 * time.Second))       // global request timeout
-	r.Use(middleware.RequestSize(5 << 20))            // max body 5 MB
+	// Global middlewares (no timeout — applied per group below)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middlewares.RequestLoggerMiddleware(app.Logger))
+	r.Use(middlewares.RecoveryMiddleware(app.Logger))
+	r.Use(middlewares.CORSMiddleware)
+	r.Use(middleware.RequestSize(5 << 20))
 
-	r.Get("/health", app.HealthCheck)
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	// Propagate request ID to response headers
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Request-ID", middleware.GetReqID(r.Context()))
+			next.ServeHTTP(w, r)
+		})
+	})
 
-	usersRoutes(app, r)
-	businessRoutes(app, r)
-	categoryRoutes(app, r)
-	followerRoutes(app, r)
-	rfqRoutes(app, r)
-	productRoutes(app, r)
-	chatRoutes(app, r)
+	// WebSocket — registered before timeout middleware so it is not affected
+	r.Get("/chat/ws", app.ChatHandler.HandleWebSocket)
+
+	// All other routes — with timeout
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.Timeout(30 * time.Second))
+		r.Get("/health", app.HealthCheck)
+		r.Get("/swagger/*", httpSwagger.WrapHandler)
+		usersRoutes(app, r)
+		businessRoutes(app, r)
+		categoryRoutes(app, r)
+		followerRoutes(app, r)
+		rfqRoutes(app, r)
+		productRoutes(app, r)
+		chatRESTRoutes(app, r)
+	})
 
 	return r
 }
 
-func usersRoutes(app *app.Application, r *chi.Mux) {
+func usersRoutes(app *app.Application, r chi.Router) {
 	// Public auth routes
 	r.Post("/admin/create", app.UserHandler.HandleCreateAdmin)
 	r.Post("/user/create", app.UserHandler.HandleCreateUser)
@@ -65,7 +79,7 @@ func usersRoutes(app *app.Application, r *chi.Mux) {
 	})
 }
 
-func businessRoutes(app *app.Application, r *chi.Mux) {
+func businessRoutes(app *app.Application, r chi.Router) {
 	r.Route("/business", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.BusinessHandler.HandleCreateBusiness)
@@ -100,7 +114,7 @@ func businessRoutes(app *app.Application, r *chi.Mux) {
 	})
 }
 
-func categoryRoutes(app *app.Application, r *chi.Mux) {
+func categoryRoutes(app *app.Application, r chi.Router) {
 	r.Route("/category", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.CategoryHandler.HandleCreateCategory)
@@ -119,7 +133,7 @@ func categoryRoutes(app *app.Application, r *chi.Mux) {
 	})
 }
 
-func followerRoutes(app *app.Application, r *chi.Mux) {
+func followerRoutes(app *app.Application, r chi.Router) {
 	r.Route("/follower", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/follow", app.FollowHandler.HandleCreateFollower)
@@ -131,7 +145,7 @@ func followerRoutes(app *app.Application, r *chi.Mux) {
 	})
 }
 
-func rfqRoutes(app *app.Application, r *chi.Mux) {
+func rfqRoutes(app *app.Application, r chi.Router) {
 	r.Route("/rfq", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.RFQHandler.HandleCreateRFQ)
@@ -143,7 +157,7 @@ func rfqRoutes(app *app.Application, r *chi.Mux) {
 	})
 }
 
-func productRoutes(app *app.Application, r *chi.Mux) {
+func productRoutes(app *app.Application, r chi.Router) {
 	r.Route("/product", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.ProductHandler.HandleCreateProduct)
@@ -169,10 +183,7 @@ func productRoutes(app *app.Application, r *chi.Mux) {
 	})
 }
 
-func chatRoutes(app *app.Application, r *chi.Mux) {
-	// WebSocket — no middleware; token is validated inside the handler via ?token= query param.
-	r.Get("/chat/ws", app.ChatHandler.HandleWebSocket)
-
+func chatRESTRoutes(app *app.Application, r chi.Router) {
 	r.Route("/chat", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/send", app.ChatHandler.HandleSendMessage)
