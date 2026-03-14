@@ -29,7 +29,7 @@ type Application struct {
 	FollowHandler   *handlers.FollowerHandler
 	RFQHandler      *handlers.RFQHandler
 	ProductHandler  *handlers.ProductHandler
-	RatingHandler   *handlers.ProductRatingHandler
+	RatingHandler   *handlers.RatingHandler
 	ReviewHandler   *handlers.ReviewHandler
 	ChatHandler     *handlers.ChatHandler
 }
@@ -64,7 +64,7 @@ func NewApplication() (*Application, error) {
 	rfqStore := store.NewPostgresRFQStore(pgdb)
 	productStore := store.NewPostgresProductStore(pgdb)
 	blobStore := store.NewPostgresBlobStore(pgdb)
-	productRatingStore := store.NewPostgresProductRatingStore(pgdb)
+	ratingStore := store.NewPostgresRatingStore(pgdb)
 	reviewStore := store.NewPostgresReviewStore(pgdb)
 	chatStore := store.NewPostgresChatStore(pgdb)
 
@@ -77,7 +77,7 @@ func NewApplication() (*Application, error) {
 	followerHandler := handlers.NewFollowerHandler(followerStore, logger)
 	rfqHandler := handlers.NewRFQHandler(rfqStore, logger)
 	productHandler := handlers.NewProductHandler(productStore, logger)
-	ratingHandler := handlers.NewProductRatingHandler(productRatingStore, logger)
+	ratingHandler := handlers.NewRatingHandler(ratingStore, logger)
 	reviewHandler := handlers.NewReviewHandler(reviewStore, logger)
 	wsHub := hub.NewHub()
 	chatHandler := handlers.NewChatHandler(chatStore, wsHub, logger)
@@ -97,6 +97,7 @@ func NewApplication() (*Application, error) {
 		RFQHandler:      rfqHandler,
 		ProductHandler:  productHandler,
 		RatingHandler:   ratingHandler,
+
 		ReviewHandler:   reviewHandler,
 		ChatHandler:     chatHandler,
 	}

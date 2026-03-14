@@ -13,14 +13,14 @@ import (
 	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
-// ProductRatingHandler handles product rating HTTP requests.
-type ProductRatingHandler struct {
-	ratingStore store.ProductRatingStore
+// RatingHandler handles product and business rating HTTP requests.
+type RatingHandler struct {
+	ratingStore store.RatingStore
 	logger      *slog.Logger
 }
 
-func NewProductRatingHandler(ratingStore store.ProductRatingStore, logger *slog.Logger) *ProductRatingHandler {
-	return &ProductRatingHandler{
+func NewRatingHandler(ratingStore store.RatingStore, logger *slog.Logger) *RatingHandler {
+	return &RatingHandler{
 		ratingStore: ratingStore,
 		logger:      logger,
 	}
@@ -38,7 +38,7 @@ func NewProductRatingHandler(ratingStore store.ProductRatingStore, logger *slog.
 // @Failure      500 {object} ErrorResponse
 // @Security     BearerAuth
 // @Router       /product/rate [post]
-func (h *ProductRatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request) {
+func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.RateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("rate product", "error", err)
@@ -76,7 +76,7 @@ func (h *ProductRatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.
 // @Failure      500 {object} ErrorResponse
 // @Security     BearerAuth
 // @Router       /product/rate/average/{id} [get]
-func (h *ProductRatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *http.Request) {
+func (h *RatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
@@ -107,7 +107,7 @@ func (h *ProductRatingHandler) HandleGetAverageProductRating(w http.ResponseWrit
 // @Failure      500 {object} ErrorResponse
 // @Security     BearerAuth
 // @Router       /product/rate/get/{id} [get]
-func (h *ProductRatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.Request) {
+func (h *RatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
@@ -139,7 +139,7 @@ func (h *ProductRatingHandler) HandleGetProductRatings(w http.ResponseWriter, r 
 // @Failure      500 {object} ErrorResponse
 // @Security     BearerAuth
 // @Router       /product/rate/delete/{id} [delete]
-func (h *ProductRatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http.Request) {
+func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
@@ -155,4 +155,97 @@ func (h *ProductRatingHandler) HandleDeleteProductRating(w http.ResponseWriter, 
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product rating deleted successfully"})
+}
+
+// HandleRateBusiness godoc
+// @Summary      Rate a business
+// @Description  Submits or updates a rating for a business by a user (upsert)
+// @Tags         businesses
+// @Accept       json
+// @Produce      json
+// @Param        body body models.RateBusinessRequest true "Rating payload"
+// @Success      200 {object} MessageResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
+// @Router       /business/rate [post]
+func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Request) {
+	var req models.RateBusinessRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("rate business", "error", err)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+	if err := validator.Validate(&req); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		return
+	}
+	if err := h.ratingStore.RateBusiness(&models.BusinessRating{
+		BusinessID: req.BusinessID,
+		UserID:     req.UserID,
+		Rating:     req.Rating,
+	}); err != nil {
+		h.logger.Error("rate business", "error", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business rated successfully"})
+}
+
+// HandleGetAverageBusinessRating godoc
+// @Summary      Get average business rating
+// @Description  Returns the average rating for the business with the given ID
+// @Tags         businesses
+// @Produce      json
+// @Param        id path string true "Business ID"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
+// @Router       /business/rate/average/{id} [get]
+func (h *RatingHandler) HandleGetAverageBusinessRating(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		return
+	}
+	avg, err := h.ratingStore.GetAverageBusinessRating(id)
+	if err != nil {
+		h.logger.Error("get average business rating", "error", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":        "average business rating fetched successfully",
+		"average_rating": avg,
+	})
+}
+
+// HandleGetBusinessRatings godoc
+// @Summary      Get all business ratings
+// @Description  Returns a list of all user ratings for the given business
+// @Tags         businesses
+// @Produce      json
+// @Param        id path string true "Business ID"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
+// @Router       /business/rate/get/{id} [get]
+func (h *RatingHandler) HandleGetBusinessRatings(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		return
+	}
+	res, err := h.ratingStore.GetRatingsByBusinessID(id)
+	if err != nil {
+		h.logger.Error("get business ratings", "error", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message": "business ratings fetched successfully",
+		"ratings": res,
+	})
 }

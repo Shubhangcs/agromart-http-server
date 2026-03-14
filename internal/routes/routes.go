@@ -69,9 +69,9 @@ func businessRoutes(app *app.Application, r *chi.Mux) {
 	r.Route("/business", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.BusinessHandler.HandleCreateBusiness)
-		r.Post("/rate", app.BusinessHandler.HandleRateBusiness)
-		r.Get("/rate/average/{id}", app.BusinessHandler.HandleGetAverageBusinessRating)
-		r.Get("/rate/get/{id}", app.BusinessHandler.HandleGetBusinessRatings)
+		r.Post("/rate", app.RatingHandler.HandleRateBusiness)
+		r.Get("/rate/average/{id}", app.RatingHandler.HandleGetAverageBusinessRating)
+		r.Get("/rate/get/{id}", app.RatingHandler.HandleGetBusinessRatings)
 		r.Get("/get/all", app.BusinessHandler.HandleGetAllBusinesses)
 		r.Get("/get/complete/{id}", app.BusinessHandler.HandleGetCompleteBusinessDetails)
 		r.Get("/get/user/{id}", app.BusinessHandler.HandleGetBusinessIDByUserID)

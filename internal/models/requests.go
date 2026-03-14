@@ -266,7 +266,6 @@ type CreateProductReviewRequest struct {
 // SendMessageRequest is the payload for sending a direct message.
 // swagger:model
 type SendMessageRequest struct {
-	SenderID   string `json:"sender_id"   validate:"required" example:"user-uuid-001"`
 	ReceiverID string `json:"receiver_id" validate:"required" example:"user-uuid-002"`
 	Content    string `json:"content"     validate:"required" example:"Hello, is this product available?"`
 }

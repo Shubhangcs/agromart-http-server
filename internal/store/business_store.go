@@ -38,9 +38,6 @@ type BusinessStore interface {
 	UpdateBlockBusinessStatus(id string, status bool) error
 	GetBusinessIDByUserID(id string) (*string, error)
 	IsBusinessApproved(id string) (bool, error)
-	RateBusiness(*models.BusinessRating) error
-	GetAverageBusinessRating(id string) (float64, error)
-	GetRatingsByBusinessID(id string) ([]models.BusinessRating, error)
 }
 
 func (bs *PostgresBusinessStore) CreateBusiness(b *models.Business) error {
@@ -639,56 +636,3 @@ func (bs *PostgresBusinessStore) IsBusinessApproved(id string) (bool, error) {
 	return approved, nil
 }
 
-// RateBusiness inserts or updates a user's rating for a business (upsert).
-func (bs *PostgresBusinessStore) RateBusiness(r *models.BusinessRating) error {
-	query := `
-	INSERT INTO business_ratings (business_id, user_id, rating)
-	VALUES ($1, $2, $3)
-	ON CONFLICT (business_id, user_id)
-	DO UPDATE SET rating = EXCLUDED.rating, updated_at = CURRENT_TIMESTAMP
-	`
-	_, err := bs.db.Exec(query, r.BusinessID, r.UserID, r.Rating)
-	return err
-}
-
-func (bs *PostgresBusinessStore) GetAverageBusinessRating(id string) (float64, error) {
-	query := `SELECT COALESCE(AVG(rating), 0)::NUMERIC(3,1) FROM business_ratings WHERE business_id = $1`
-	var avg float64
-	err := bs.db.QueryRow(query, id).Scan(&avg)
-	if err != nil {
-		return 0, err
-	}
-	return avg, nil
-}
-
-func (bs *PostgresBusinessStore) GetRatingsByBusinessID(id string) ([]models.BusinessRating, error) {
-	query := `
-	SELECT r.id, r.business_id, r.user_id,
-	       CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) AS user_name,
-	       r.rating, r.created_at, r.updated_at
-	FROM business_ratings r
-	JOIN users u ON u.id = r.user_id
-	WHERE r.business_id = $1
-	ORDER BY r.created_at DESC
-	`
-	rows, err := bs.db.Query(query, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ratings []models.BusinessRating
-	for rows.Next() {
-		var rating models.BusinessRating
-		err = rows.Scan(
-			&rating.ID, &rating.BusinessID, &rating.UserID,
-			&rating.UserName, &rating.Rating,
-			&rating.CreatedAT, &rating.UpdatedAT,
-		)
-		if err != nil {
-			return nil, err
-		}
-		ratings = append(ratings, rating)
-	}
-	return ratings, rows.Err()
-}

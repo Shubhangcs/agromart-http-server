@@ -61,13 +61,14 @@ CREATE TABLE
     IF NOT EXISTS business_ratings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
         business_id UUID REFERENCES businesses (id) ON DELETE CASCADE,
-        user_id UUID UNIQUE REFERENCES users (id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users (id) ON DELETE CASCADE,
         rating NUMERIC(1, 1) NOT NULL CHECK (
             rating > 0.0
             AND rating <= 5.0
         ),
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
+        UNIQUE (business_id, user_id)
     );
 
 -- +goose StatementEnd

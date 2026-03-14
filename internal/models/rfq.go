@@ -4,6 +4,7 @@ import "time"
 
 type RFQ struct {
 	ID                     string    `json:"id"`
+	UserID                 string    `json:"user_id"`
 	BusinessID             string    `json:"business_id"`
 	BusinessName           string    `json:"business_name"`
 	BusinessPhone          string    `json:"business_phone"`

@@ -104,7 +104,7 @@ func (rs *PostgresRFQStore) DeleteRFQ(id string) error {
 func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQ, error) {
 	query := `
 	SELECT
-		r.id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
+		r.id, b.user_id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
 		c.id, c.name, c.description,
 		sc.id, sc.name, sc.description,
 		r.product_name, r.quantity, r.unit, r.price, r.is_rfq_active, r.created_at, r.updated_at
@@ -129,7 +129,7 @@ func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int)
 	for rows.Next() {
 		var rfq models.RFQ
 		err = rows.Scan(
-			&rfq.ID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
+			&rfq.ID, &rfq.UserID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
 			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
 			&rfq.CategoryID, &rfq.CategoryName, &rfq.CategoryDescription,
 			&rfq.SubCategoryID, &rfq.SubCategoryName, &rfq.SubCategoryDescription,
@@ -148,7 +148,7 @@ func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int)
 func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQ, error) {
 	query := `
 	SELECT
-		r.id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
+		r.id, b.user_id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
 		r.product_name, r.quantity, r.unit, r.price, r.is_rfq_active, r.created_at, r.updated_at
 	FROM rfqs r
 	JOIN businesses b ON b.id = r.business_id
@@ -166,7 +166,7 @@ func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]
 	for rows.Next() {
 		var rfq models.RFQ
 		err = rows.Scan(
-			&rfq.ID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
+			&rfq.ID, &rfq.UserID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
 			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
 			&rfq.ProductName, &rfq.Quantity, &rfq.Unit, &rfq.Price,
 			&rfq.IsRFQActive, &rfq.CreatedAT, &rfq.UpdatedAT,

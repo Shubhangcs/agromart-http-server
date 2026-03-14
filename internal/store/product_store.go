@@ -136,7 +136,7 @@ func (ps *PostgresProductStore) fetchProductImages(productID string) ([]models.P
 // via a JOIN to the businesses table.
 func (ps *PostgresProductStore) GetAllProducts(filter utils.ProductFilter, limit, offset int) ([]models.Product, error) {
 	query := `
-	SELECT p.id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
 	FROM products p
 	JOIN businesses b ON b.id = p.business_id
 	WHERE p.is_product_active = TRUE
@@ -151,10 +151,11 @@ func (ps *PostgresProductStore) GetAllProducts(filter utils.ProductFilter, limit
 
 func (ps *PostgresProductStore) GetBusinessProducts(id string, limit, offset int) ([]models.Product, error) {
 	query := `
-	SELECT id, name, description, quantity, unit, price, moq, is_product_active, created_at, updated_at
-	FROM products
-	WHERE business_id = $1
-	ORDER BY created_at DESC
+	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.is_product_active, p.created_at, p.updated_at
+	FROM products p
+	JOIN businesses b ON b.id = p.business_id
+	WHERE p.business_id = $1
+	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
 	rows, err := ps.db.Query(query, id, limit, offset)
@@ -167,7 +168,7 @@ func (ps *PostgresProductStore) GetBusinessProducts(id string, limit, offset int
 	for rows.Next() {
 		var p models.Product
 		err = rows.Scan(
-			&p.ID, &p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price,
+			&p.ID, &p.UserID, &p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price,
 			&p.MOQ, &p.IsProductActive, &p.CreatedAT, &p.UpdatedAT,
 		)
 		if err != nil {
@@ -186,8 +187,9 @@ func (ps *PostgresProductStore) GetBusinessProducts(id string, limit, offset int
 // follows, using a JOIN instead of two separate queries.
 func (ps *PostgresProductStore) GetFollowersProducts(id string, limit, offset int) ([]models.Product, error) {
 	query := `
-	SELECT DISTINCT p.id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	SELECT DISTINCT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
 	FROM products p
+	JOIN businesses b ON b.id = p.business_id
 	JOIN followers f ON f.business_id = p.business_id
 	WHERE f.user_id = $1
 	  AND p.is_product_active = TRUE
@@ -199,11 +201,12 @@ func (ps *PostgresProductStore) GetFollowersProducts(id string, limit, offset in
 
 func (ps *PostgresProductStore) GetCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error) {
 	query := `
-	SELECT id, name, description, quantity, unit, price, moq, created_at, updated_at
-	FROM products
-	WHERE category_id = $1
-	  AND is_product_active = TRUE
-	ORDER BY created_at DESC
+	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	FROM products p
+	JOIN businesses b ON b.id = p.business_id
+	WHERE p.category_id = $1
+	  AND p.is_product_active = TRUE
+	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
 	return ps.scanProducts(query, id, limit, offset)
@@ -211,17 +214,18 @@ func (ps *PostgresProductStore) GetCategoryBasedProducts(id string, limit, offse
 
 func (ps *PostgresProductStore) GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error) {
 	query := `
-	SELECT id, name, description, quantity, unit, price, moq, created_at, updated_at
-	FROM products
-	WHERE sub_category_id = $1
-	  AND is_product_active = TRUE
-	ORDER BY created_at DESC
+	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	FROM products p
+	JOIN businesses b ON b.id = p.business_id
+	WHERE p.sub_category_id = $1
+	  AND p.is_product_active = TRUE
+	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
 	return ps.scanProducts(query, id, limit, offset)
 }
 
-// scanProducts is a helper that scans a 9-column product row (no is_product_active).
+// scanProducts is a helper that scans a 10-column product row (id, user_id, name, ...).
 func (ps *PostgresProductStore) scanProducts(query string, args ...any) ([]models.Product, error) {
 	rows, err := ps.db.Query(query, args...)
 	if err != nil {
@@ -233,7 +237,7 @@ func (ps *PostgresProductStore) scanProducts(query string, args ...any) ([]model
 	for rows.Next() {
 		var p models.Product
 		err = rows.Scan(
-			&p.ID, &p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price,
+			&p.ID, &p.UserID, &p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price,
 			&p.MOQ, &p.CreatedAT, &p.UpdatedAT,
 		)
 		if err != nil {
@@ -251,7 +255,7 @@ func (ps *PostgresProductStore) scanProducts(query string, args ...any) ([]model
 func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.CompleteProduct, error) {
 	query := `
 	SELECT
-		p.id, p.business_id,
+		p.id, b.user_id, p.business_id,
 		b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state, b.pincode,
 		p.category_id, c.name, c.description,
 		p.sub_category_id, s.name, s.description,
@@ -264,7 +268,7 @@ func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.Comple
 	`
 	var c models.CompleteProduct
 	err := ps.db.QueryRow(query, id).Scan(
-		&c.ID, &c.BusinessID,
+		&c.ID, &c.UserID, &c.BusinessID,
 		&c.BusinessName, &c.BusinessEmail, &c.BusinessPhone, &c.Address, &c.City, &c.State, &c.Pincode,
 		&c.CategoryID, &c.CategoryName, &c.CategoryDescription,
 		&c.SubCategoryID, &c.SubCategoryName, &c.SubCategoryDescription,

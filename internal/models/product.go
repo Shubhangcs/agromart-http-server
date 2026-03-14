@@ -4,6 +4,7 @@ import "time"
 
 type Product struct {
 	ID              string          `json:"id,omitempty"`
+	UserID          string          `json:"user_id,omitempty"`
 	BusinessID      string          `json:"business_id,omitempty"`
 	CategoryID      string          `json:"category_id,omitempty"`
 	SubCategoryID   string          `json:"sub_category_id,omitempty"`
@@ -21,6 +22,7 @@ type Product struct {
 
 type CompleteProduct struct {
 	ID                     string          `json:"id"`
+	UserID                 string          `json:"user_id"`
 	BusinessID             string          `json:"business_id"`
 	BusinessName           string          `json:"business_name"`
 	BusinessEmail          string          `json:"business_email"`
