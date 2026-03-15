@@ -2,10 +2,20 @@ package models
 
 import "time"
 
-// WishlistItemModel represents a single product saved in a user's wishlist,
+// --- Request DTOs ---
+
+// AddToWishlistRequest is the request payload for adding a product to the wishlist.
+// swagger:model
+type AddToWishlistRequest struct {
+	ProductID string `json:"product_id" validate:"required" example:"prod-uuid-001"`
+}
+
+// --- Response DTOs ---
+
+// WishlistItem represents a single product saved in a user's wishlist,
 // joined with full product details for display.
-// swagger:model WishlistItemModel
-type WishlistItemModel struct {
+// swagger:model
+type WishlistItem struct {
 	ID          string    `json:"id"`
 	UserID      string    `json:"user_id"`
 	ProductID   string    `json:"product_id"`
@@ -16,12 +26,4 @@ type WishlistItemModel struct {
 	MOQ         string    `json:"moq"`
 	BusinessID  string    `json:"business_id"`
 	CreatedAT   time.Time `json:"created_at"`
-}
-
-// --- Request Models ---
-
-// AddToWishlistRequestModel is the request payload for adding a product to the wishlist.
-// swagger:model AddToWishlistRequestModel
-type AddToWishlistRequestModel struct {
-	ProductID string `json:"product_id" validate:"required" example:"prod-uuid-001"`
 }

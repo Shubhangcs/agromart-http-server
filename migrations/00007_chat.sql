@@ -8,10 +8,9 @@ CREATE TABLE IF NOT EXISTS messages (
     is_read     BOOLEAN   NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP NOT NULL DEFAULT NOW ()
 );
-
 -- +goose StatementEnd
+
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS messages;
-
 -- +goose StatementEnd

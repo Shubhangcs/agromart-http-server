@@ -21,7 +21,7 @@ type ProductStore interface {
 	GetFollowersProducts(id string, limit, offset int) ([]models.Product, error)
 	GetCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error)
 	GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error)
-	GetProductDetailsByID(id string) (*models.CompleteProduct, error)
+	GetProductDetailsByID(id string) (*models.ProductDetailsResponse, error)
 }
 
 func NewPostgresProductStore(db *sql.DB) *PostgresProductStore {
@@ -252,7 +252,7 @@ func (ps *PostgresProductStore) scanProducts(query string, args ...any) ([]model
 	return products, rows.Err()
 }
 
-func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.CompleteProduct, error) {
+func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.ProductDetailsResponse, error) {
 	query := `
 	SELECT
 		p.id, b.user_id, p.business_id,
@@ -266,7 +266,7 @@ func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.Comple
 	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.id = $1
 	`
-	var c models.CompleteProduct
+	var c models.ProductDetailsResponse
 	err := ps.db.QueryRow(query, id).Scan(
 		&c.ID, &c.UserID, &c.BusinessID,
 		&c.BusinessName, &c.BusinessEmail, &c.BusinessPhone, &c.Address, &c.City, &c.State, &c.Pincode,

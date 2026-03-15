@@ -59,7 +59,6 @@ BEGIN
             ADD CONSTRAINT unique_user_business_rating UNIQUE (business_id, user_id);
     END IF;
 END $$;
-
 -- +goose StatementEnd
 
 -- +goose Down
@@ -101,5 +100,4 @@ DROP INDEX IF EXISTS idx_products_business_id;
 DROP INDEX IF EXISTS idx_sub_categories_category_id;
 
 DROP INDEX IF EXISTS idx_businesses_user_id;
-
 -- +goose StatementEnd

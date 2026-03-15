@@ -16,8 +16,8 @@ type RFQStore interface {
 	ActivateRFQ(*models.RFQ) error
 	UpdateRFQ(*models.RFQ) error
 	DeleteRFQ(id string) error
-	GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQ, error)
-	GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQ, error)
+	GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQResponse, error)
+	GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQResponse, error)
 }
 
 func NewPostgresRFQStore(db *sql.DB) *PostgresRFQStore {
@@ -101,7 +101,7 @@ func (rs *PostgresRFQStore) DeleteRFQ(id string) error {
 
 // GetAllRFQ returns active RFQs with business and category details, paginated.
 // Optional filters: product name search (?q=), city, and state.
-func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQ, error) {
+func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQResponse, error) {
 	query := `
 	SELECT
 		r.id, b.user_id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
@@ -125,9 +125,9 @@ func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int)
 	}
 	defer rows.Close()
 
-	var rfqs []models.RFQ
+	var rfqs []models.RFQResponse
 	for rows.Next() {
-		var rfq models.RFQ
+		var rfq models.RFQResponse
 		err = rows.Scan(
 			&rfq.ID, &rfq.UserID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
 			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
@@ -145,7 +145,7 @@ func (rs *PostgresRFQStore) GetAllRFQ(filter utils.RFQFilter, limit, offset int)
 }
 
 // GetRFQByBusinessID returns all RFQs for a business (active and inactive), paginated.
-func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQ, error) {
+func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQResponse, error) {
 	query := `
 	SELECT
 		r.id, b.user_id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
@@ -162,9 +162,9 @@ func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]
 	}
 	defer rows.Close()
 
-	var rfqs []models.RFQ
+	var rfqs []models.RFQResponse
 	for rows.Next() {
-		var rfq models.RFQ
+		var rfq models.RFQResponse
 		err = rows.Scan(
 			&rfq.ID, &rfq.UserID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
 			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,

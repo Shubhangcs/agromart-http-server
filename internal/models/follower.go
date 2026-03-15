@@ -2,12 +2,15 @@ package models
 
 import "time"
 
+// --- DB Models ---
+
 type Follower struct {
 	UserID     string    `json:"user_id"`
 	BusinessID string    `json:"business_id"`
 	CreatedAT  time.Time `json:"created_at"`
 }
 
+// FollowerDetails is both a DB scan result and a response DTO for follower listings.
 type FollowerDetails struct {
 	FollowerID           string    `json:"follower_id"`
 	FollowerProfileImage *string   `json:"follower_profile_image"`
@@ -17,6 +20,7 @@ type FollowerDetails struct {
 	CreatedAT            time.Time `json:"created_at"`
 }
 
+// FollowingDetails is both a DB scan result and a response DTO for following listings.
 type FollowingDetails struct {
 	FollowingID           string  `json:"following_id"`
 	FollowingProfileImage *string `json:"following_profile_image"`
@@ -26,4 +30,13 @@ type FollowingDetails struct {
 	FollowingCity         string  `json:"following_city"`
 	FollowingState        string  `json:"following_state"`
 	FollowingTelegram     *string `json:"following_telegram"`
+}
+
+// --- Request DTOs ---
+
+// FollowRequest is the payload for follow/unfollow actions.
+// swagger:model
+type FollowRequest struct {
+	UserID     string `json:"user_id"     validate:"required" example:"user-uuid-001"`
+	BusinessID string `json:"business_id" validate:"required" example:"biz-uuid-001"`
 }

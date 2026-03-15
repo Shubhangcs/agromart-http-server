@@ -7,10 +7,9 @@ CREATE TABLE IF NOT EXISTS wishlists (
     created_at TIMESTAMP NOT NULL DEFAULT NOW (),
     UNIQUE (user_id, product_id)
 );
-
 -- +goose StatementEnd
+
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS wishlists;
-
 -- +goose StatementEnd

@@ -13,7 +13,7 @@ type WishlistStore interface {
 	// RemoveFromWishlist removes a product from a user's wishlist.
 	RemoveFromWishlist(userID, productID string) error
 	// GetUserWishlist returns all wishlist items for a user with product details, paginated.
-	GetUserWishlist(userID string, limit, offset int) ([]models.WishlistItemModel, error)
+	GetUserWishlist(userID string, limit, offset int) ([]models.WishlistItem, error)
 	// IsInWishlist reports whether a product is already in the user's wishlist.
 	IsInWishlist(userID, productID string) (bool, error)
 }
@@ -53,7 +53,7 @@ func (ws *PostgresWishlistStore) RemoveFromWishlist(userID, productID string) er
 	return nil
 }
 
-func (ws *PostgresWishlistStore) GetUserWishlist(userID string, limit, offset int) ([]models.WishlistItemModel, error) {
+func (ws *PostgresWishlistStore) GetUserWishlist(userID string, limit, offset int) ([]models.WishlistItem, error) {
 	query := `
 	SELECT
 		w.id, w.user_id, w.product_id,
@@ -71,9 +71,9 @@ func (ws *PostgresWishlistStore) GetUserWishlist(userID string, limit, offset in
 	}
 	defer rows.Close()
 
-	var items []models.WishlistItemModel
+	var items []models.WishlistItem
 	for rows.Next() {
-		var item models.WishlistItemModel
+		var item models.WishlistItem
 		if err = rows.Scan(
 			&item.ID, &item.UserID, &item.ProductID,
 			&item.ProductName, &item.Description, &item.Price, &item.Unit, &item.MOQ, &item.BusinessID,

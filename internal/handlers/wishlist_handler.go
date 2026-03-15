@@ -31,7 +31,7 @@ func NewWishlistHandler(wishlistStore store.WishlistStore, logger *slog.Logger) 
 // @Tags         wishlist
 // @Accept       json
 // @Produce      json
-// @Param        body body models.AddToWishlistRequestModel true "Product to add"
+// @Param        body body models.AddToWishlistRequest true "Product to add"
 // @Success      201 {object} handlers.MessageResponse
 // @Failure      400 {object} handlers.ErrorResponse
 // @Failure      401 {object} handlers.ErrorResponse
@@ -44,7 +44,7 @@ func (wh *WishlistHandler) HandleAddToWishlist(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var req models.AddToWishlistRequestModel
+	var req models.AddToWishlistRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, wh.logger, "invalid request payload", err)
 		return
@@ -121,7 +121,7 @@ func (wh *WishlistHandler) HandleGetWishlist(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if items == nil {
-		items = []models.WishlistItemModel{}
+		items = []models.WishlistItem{}
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
 		"wishlist":   items,
