@@ -42,6 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_wishlists_product_id ON wishlists (product_id);
 
 DO $$
 BEGIN
+    -- Drop old single-column unique constraint if it exists (from old schema)
     IF EXISTS (
         SELECT 1 FROM pg_constraint
         WHERE conname = 'business_ratings_user_id_key'
@@ -50,13 +51,17 @@ BEGIN
         ALTER TABLE business_ratings DROP CONSTRAINT business_ratings_user_id_key;
     END IF;
 
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'unique_user_business_rating'
-          AND conrelid = 'business_ratings'::regclass
+    -- Fix rating column type from NUMERIC(1,1) to NUMERIC(2,1) for existing DBs
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'business_ratings'
+          AND column_name = 'rating'
+          AND numeric_precision = 1
     ) THEN
-        ALTER TABLE business_ratings
-            ADD CONSTRAINT unique_user_business_rating UNIQUE (business_id, user_id);
+        ALTER TABLE business_ratings ALTER COLUMN rating TYPE NUMERIC(2, 1);
+        ALTER TABLE business_ratings DROP CONSTRAINT IF EXISTS business_ratings_rating_check;
+        ALTER TABLE business_ratings ADD CONSTRAINT business_ratings_rating_check
+            CHECK (rating >= 0.5 AND rating <= 5.0);
     END IF;
 END $$;
 -- +goose StatementEnd

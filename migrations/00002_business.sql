@@ -62,8 +62,8 @@ CREATE TABLE
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
         business_id UUID REFERENCES businesses (id) ON DELETE CASCADE,
         user_id UUID REFERENCES users (id) ON DELETE CASCADE,
-        rating NUMERIC(1, 1) NOT NULL CHECK (
-            rating > 0.0
+        rating NUMERIC(2, 1) NOT NULL CHECK (
+            rating >= 0.5
             AND rating <= 5.0
         ),
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),

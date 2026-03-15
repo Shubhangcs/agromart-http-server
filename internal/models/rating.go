@@ -35,3 +35,11 @@ type RateProductRequest struct {
 	UserID    string  `json:"user_id"    validate:"required" example:"user-uuid-001"`
 	Rating    float64 `json:"rating"                         example:"4.5"`
 }
+
+// RateBusinessRequest is the payload for rating a business.
+// swagger:model
+type RateBusinessRequest struct {
+	BusinessID string  `json:"business_id" validate:"required" example:"biz-uuid-001"`
+	UserID     string  `json:"user_id"     validate:"required" example:"user-uuid-001"`
+	Rating     float64 `json:"rating"                          example:"4.5"`
+}

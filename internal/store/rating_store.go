@@ -15,7 +15,7 @@ type RatingStore interface {
 
 	RateBusiness(*models.BusinessRating) error
 	GetAverageBusinessRating(id string) (float64, error)
-	GetRatingsByBusinessID(id string) ([]models.BusinessRating, error)
+	GetRatingsByBusinessID(id string, limit, offset int) ([]models.BusinessRating, error)
 }
 
 // PostgresRatingStore is the Postgres-backed implementation.
@@ -133,7 +133,7 @@ func (s *PostgresRatingStore) GetAverageBusinessRating(id string) (float64, erro
 	return avg, nil
 }
 
-func (s *PostgresRatingStore) GetRatingsByBusinessID(id string) ([]models.BusinessRating, error) {
+func (s *PostgresRatingStore) GetRatingsByBusinessID(id string, limit, offset int) ([]models.BusinessRating, error) {
 	query := `
 	SELECT r.id, r.business_id, r.user_id,
 	       CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) AS user_name,
@@ -142,8 +142,9 @@ func (s *PostgresRatingStore) GetRatingsByBusinessID(id string) ([]models.Busine
 	JOIN users u ON u.id = r.user_id
 	WHERE r.business_id = $1
 	ORDER BY r.created_at DESC
+	LIMIT $2 OFFSET $3
 	`
-	rows, err := s.db.Query(query, id)
+	rows, err := s.db.Query(query, id, limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -230,13 +230,15 @@ func (h *RatingHandler) HandleGetBusinessRatings(w http.ResponseWriter, r *http.
 		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
-	res, err := h.ratingStore.GetRatingsByBusinessID(id)
+	pg := utils.ReadPaginationParams(r)
+	res, err := h.ratingStore.GetRatingsByBusinessID(id, pg.Limit, pg.Offset())
 	if err != nil {
 		utils.ServerError(w, h.logger, "get business ratings", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
-		"message": "business ratings fetched successfully",
-		"ratings": res,
+		"message":    "business ratings fetched successfully",
+		"ratings":    res,
+		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
 	})
 }
