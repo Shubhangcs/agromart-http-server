@@ -102,7 +102,7 @@ type ProductResponse struct {
 	Price           float64         `json:"price"`
 	MOQ             string          `json:"moq"`
 	IsProductActive bool            `json:"is_product_active"`
-	Images          []ProductImages `json:"images,omitempty"`
+	Images          []ProductImages `json:"product_images,omitempty"`
 	CreatedAT       time.Time       `json:"created_at"`
 	UpdatedAT       time.Time       `json:"updated_at"`
 }
