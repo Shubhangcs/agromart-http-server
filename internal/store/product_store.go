@@ -16,11 +16,11 @@ type ProductStore interface {
 	UpdateProduct(*models.Product) error
 	ChangeProductActivateStatus(*models.Product) error
 	DeleteProduct(id string) error
-	GetAllProducts(filter utils.ProductFilter, limit, offset int) ([]models.Product, error)
-	GetBusinessProducts(id string, limit, offset int) ([]models.Product, error)
-	GetFollowersProducts(id string, limit, offset int) ([]models.Product, error)
-	GetCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error)
-	GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error)
+	GetAllProducts(filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error)
+	GetBusinessProducts(id string, limit, offset int) ([]models.ProductResponse, error)
+	GetFollowersProducts(id string, limit, offset int) ([]models.ProductResponse, error)
+	GetCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error)
+	GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error)
 	GetProductDetailsByID(id string) (*models.ProductDetailsResponse, error)
 }
 
@@ -132,13 +132,17 @@ func (ps *PostgresProductStore) fetchProductImages(productID string) ([]models.P
 	return images, rows.Err()
 }
 
-// GetAllProducts returns paginated active products with optional name/city/state filtering
-// via a JOIN to the businesses table.
-func (ps *PostgresProductStore) GetAllProducts(filter utils.ProductFilter, limit, offset int) ([]models.Product, error) {
+// GetAllProducts returns paginated active products with optional name/city/state filtering.
+func (ps *PostgresProductStore) GetAllProducts(filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
-	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	SELECT p.id, p.business_id,
+	       p.category_id, c.name, p.sub_category_id, s.name,
+	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
+	       p.is_product_active, p.created_at, p.updated_at
 	FROM products p
 	JOIN businesses b ON b.id = p.business_id
+	JOIN categories c ON c.id = p.category_id
+	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.is_product_active = TRUE
 	  AND ($1 = '' OR p.name ILIKE '%' || $1 || '%')
 	  AND ($2 = '' OR b.city ILIKE $2)
@@ -146,99 +150,94 @@ func (ps *PostgresProductStore) GetAllProducts(filter utils.ProductFilter, limit
 	ORDER BY p.created_at DESC
 	LIMIT $4 OFFSET $5
 	`
-	return ps.scanProducts(query, filter.Name, filter.City, filter.State, limit, offset)
+	return ps.scanProductResponses(query, filter.Name, filter.City, filter.State, limit, offset)
 }
 
-func (ps *PostgresProductStore) GetBusinessProducts(id string, limit, offset int) ([]models.Product, error) {
+func (ps *PostgresProductStore) GetBusinessProducts(id string, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
-	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.is_product_active, p.created_at, p.updated_at
+	SELECT p.id, p.business_id,
+	       p.category_id, c.name, p.sub_category_id, s.name,
+	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
+	       p.is_product_active, p.created_at, p.updated_at
 	FROM products p
-	JOIN businesses b ON b.id = p.business_id
+	JOIN categories c ON c.id = p.category_id
+	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.business_id = $1
 	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
-	rows, err := ps.db.Query(query, id, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var products []models.Product
-	for rows.Next() {
-		var p models.Product
-		err = rows.Scan(
-			&p.ID, &p.UserID, &p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price,
-			&p.MOQ, &p.IsProductActive, &p.CreatedAT, &p.UpdatedAT,
-		)
-		if err != nil {
-			return nil, err
-		}
-		p.Images, err = ps.fetchProductImages(p.ID)
-		if err != nil {
-			return nil, err
-		}
-		products = append(products, p)
-	}
-	return products, rows.Err()
+	return ps.scanProductResponses(query, id, limit, offset)
 }
 
-// GetFollowersProducts returns active products from businesses the given user
-// follows, using a JOIN instead of two separate queries.
-func (ps *PostgresProductStore) GetFollowersProducts(id string, limit, offset int) ([]models.Product, error) {
+// GetFollowersProducts returns active products from businesses the given user follows.
+func (ps *PostgresProductStore) GetFollowersProducts(id string, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
-	SELECT DISTINCT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	SELECT DISTINCT p.id, p.business_id,
+	       p.category_id, c.name, p.sub_category_id, s.name,
+	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
+	       p.is_product_active, p.created_at, p.updated_at
 	FROM products p
-	JOIN businesses b ON b.id = p.business_id
+	JOIN categories c ON c.id = p.category_id
+	JOIN sub_categories s ON s.id = p.sub_category_id
 	JOIN followers f ON f.business_id = p.business_id
 	WHERE f.user_id = $1
 	  AND p.is_product_active = TRUE
 	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
-	return ps.scanProducts(query, id, limit, offset)
+	return ps.scanProductResponses(query, id, limit, offset)
 }
 
-func (ps *PostgresProductStore) GetCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error) {
+func (ps *PostgresProductStore) GetCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
-	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	SELECT p.id, p.business_id,
+	       p.category_id, c.name, p.sub_category_id, s.name,
+	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
+	       p.is_product_active, p.created_at, p.updated_at
 	FROM products p
-	JOIN businesses b ON b.id = p.business_id
+	JOIN categories c ON c.id = p.category_id
+	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.category_id = $1
 	  AND p.is_product_active = TRUE
 	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
-	return ps.scanProducts(query, id, limit, offset)
+	return ps.scanProductResponses(query, id, limit, offset)
 }
 
-func (ps *PostgresProductStore) GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.Product, error) {
+func (ps *PostgresProductStore) GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
-	SELECT p.id, b.user_id, p.name, p.description, p.quantity, p.unit, p.price, p.moq, p.created_at, p.updated_at
+	SELECT p.id, p.business_id,
+	       p.category_id, c.name, p.sub_category_id, s.name,
+	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
+	       p.is_product_active, p.created_at, p.updated_at
 	FROM products p
-	JOIN businesses b ON b.id = p.business_id
+	JOIN categories c ON c.id = p.category_id
+	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.sub_category_id = $1
 	  AND p.is_product_active = TRUE
 	ORDER BY p.created_at DESC
 	LIMIT $2 OFFSET $3
 	`
-	return ps.scanProducts(query, id, limit, offset)
+	return ps.scanProductResponses(query, id, limit, offset)
 }
 
-// scanProducts is a helper that scans a 10-column product row (id, user_id, name, ...).
-func (ps *PostgresProductStore) scanProducts(query string, args ...any) ([]models.Product, error) {
+// scanProductResponses scans rows into []models.ProductResponse, fetching images for each product.
+func (ps *PostgresProductStore) scanProductResponses(query string, args ...any) ([]models.ProductResponse, error) {
 	rows, err := ps.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var products []models.Product
+	var products []models.ProductResponse
 	for rows.Next() {
-		var p models.Product
+		var p models.ProductResponse
 		err = rows.Scan(
-			&p.ID, &p.UserID, &p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price,
-			&p.MOQ, &p.CreatedAT, &p.UpdatedAT,
+			&p.ID, &p.BusinessID,
+			&p.CategoryID, &p.CategoryName, &p.SubCategoryID, &p.SubCategoryName,
+			&p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price, &p.MOQ,
+			&p.IsProductActive, &p.CreatedAT, &p.UpdatedAT,
 		)
 		if err != nil {
 			return nil, err

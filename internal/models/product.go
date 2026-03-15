@@ -92,7 +92,9 @@ type ProductResponse struct {
 	ID              string          `json:"id"`
 	BusinessID      string          `json:"business_id"`
 	CategoryID      string          `json:"category_id"`
+	CategoryName    string          `json:"category_name"`
 	SubCategoryID   string          `json:"sub_category_id"`
+	SubCategoryName string          `json:"sub_category_name"`
 	Name            string          `json:"name"`
 	Description     string          `json:"description"`
 	Quantity        float64         `json:"quantity"`
