@@ -58,6 +58,7 @@ func (ws *PostgresWishlistStore) GetUserWishlist(userID string, limit, offset in
 	SELECT
 		w.id, w.user_id, w.product_id,
 		p.name, p.description, p.price, p.unit, p.moq, p.business_id,
+		(SELECT image FROM product_images WHERE product_id = p.id ORDER BY image_index ASC LIMIT 1),
 		w.created_at
 	FROM wishlists w
 	JOIN products p ON p.id = w.product_id
@@ -77,6 +78,7 @@ func (ws *PostgresWishlistStore) GetUserWishlist(userID string, limit, offset in
 		if err = rows.Scan(
 			&item.ID, &item.UserID, &item.ProductID,
 			&item.ProductName, &item.Description, &item.Price, &item.Unit, &item.MOQ, &item.BusinessID,
+			&item.ProductImage,
 			&item.CreatedAT,
 		); err != nil {
 			return nil, err
