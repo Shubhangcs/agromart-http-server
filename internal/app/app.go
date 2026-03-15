@@ -11,6 +11,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/shubhangcs/agromart-server/internal/blob"
+	"github.com/shubhangcs/agromart-server/internal/env"
 	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/hub"
 	"github.com/shubhangcs/agromart-server/internal/store"
@@ -38,6 +39,21 @@ type Application struct {
 }
 
 func NewApplication() (*Application, error) {
+	if err := env.Require(
+		"DATABASE_HOST",
+		"DATABASE_PORT",
+		"DATABASE_USER",
+		"DATABASE_NAME",
+		"DATABASE_PASSWORD",
+		"JWT_SECRET_KEY",
+		"JWT_TOKEN_ISSUER",
+		"ACCESS_KEY",
+		"SECRET_KEY",
+		"BUCKET_NAME",
+	); err != nil {
+		return nil, err
+	}
+
 	// Creating a new structured logger
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
