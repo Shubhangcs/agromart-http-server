@@ -18,6 +18,6 @@ CREATE TABLE
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF NOT EXISTS rfqs;
+DROP TABLE IF EXISTS rfqs;
 
 -- +goose StatementEnd

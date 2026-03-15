@@ -11,6 +11,6 @@ CREATE TABLE
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS followers ();
+DROP TABLE IF EXISTS followers;
 
 -- +goose StatementEnd

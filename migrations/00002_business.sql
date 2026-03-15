@@ -71,10 +71,23 @@ CREATE TABLE
         UNIQUE (business_id, user_id)
     );
 
+CREATE TABLE
+    IF NOT EXISTS business_reviews (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+        business_id UUID NOT NULL REFERENCES businesses (id) ON DELETE CASCADE,
+        user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        review TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
--- FIX: Drop the correct table names (were previously wrong placeholder names)
+DROP TABLE IF EXISTS business_ratings;
+
+DROP TABLE IF EXISTS business_reviews;
+
 DROP TABLE IF EXISTS business_applications;
 
 DROP TABLE IF EXISTS business_legals;
