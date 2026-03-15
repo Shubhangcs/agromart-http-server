@@ -202,15 +202,15 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 
 	var req models.SendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, ch.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ch.logger, err.Error(), err)
 		return
 	}
 	if req.ReceiverID == senderID {
-		badRequest(w, "cannot send a message to yourself")
+		utils.BadRequest(w, ch.logger, "cannot send a message to yourself", nil)
 		return
 	}
 
@@ -220,7 +220,7 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 		Content:    req.Content,
 	}
 	if err := ch.chatStore.SaveMessage(msg); err != nil {
-		serverError(w, ch.logger, "send message", err)
+		utils.ServerError(w, ch.logger, "send message", err)
 		return
 	}
 
@@ -255,7 +255,7 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 
 	withUserID := r.URL.Query().Get("with_user_id")
 	if withUserID == "" {
-		badRequest(w, "with_user_id is required")
+		utils.BadRequest(w, ch.logger, "with_user_id is required", nil)
 		return
 	}
 
@@ -269,7 +269,7 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 			})
 			return
 		}
-		serverError(w, ch.logger, "get chat history", err)
+		utils.ServerError(w, ch.logger, "get chat history", err)
 		return
 	}
 
@@ -305,12 +305,12 @@ func (ch *ChatHandler) HandleMarkAsRead(w http.ResponseWriter, r *http.Request) 
 
 	senderID := r.URL.Query().Get("sender_id")
 	if senderID == "" {
-		badRequest(w, "sender_id is required")
+		utils.BadRequest(w, ch.logger, "sender_id is required", nil)
 		return
 	}
 
 	if err := ch.chatStore.MarkAsRead(senderID, receiverID); err != nil {
-		serverError(w, ch.logger, "mark as read", err)
+		utils.ServerError(w, ch.logger, "mark as read", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "messages marked as read"})

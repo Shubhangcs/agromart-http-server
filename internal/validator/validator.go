@@ -2,15 +2,48 @@ package validator
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
 
+var (
+	rePhone        = regexp.MustCompile(`^\d{7,15}$`)
+	reAadhaar      = regexp.MustCompile(`^\d{12}$`)
+	rePAN          = regexp.MustCompile(`^[A-Z]{5}[0-9]{4}[A-Z]$`)
+	reExportImport = regexp.MustCompile(`^[A-Z0-9]{10}$`)
+	reMSME         = regexp.MustCompile(`^UDYAM-[A-Z]{2}-\d{2}-\d{7}$`)
+	reGST          = regexp.MustCompile(`^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$`)
+	reFassi        = regexp.MustCompile(`^\d{14}$`)
+)
+
 var validate = validator.New()
 
-// Validate validates the given struct using struct field tags.
-// It returns a human-readable error string on failure, or nil on success.
+func init() {
+	validate.RegisterValidation("phone", func(fl validator.FieldLevel) bool {
+		return rePhone.MatchString(fl.Field().String())
+	})
+	validate.RegisterValidation("aadhaar", func(fl validator.FieldLevel) bool {
+		return reAadhaar.MatchString(fl.Field().String())
+	})
+	validate.RegisterValidation("pan", func(fl validator.FieldLevel) bool {
+		return rePAN.MatchString(fl.Field().String())
+	})
+	validate.RegisterValidation("export_import", func(fl validator.FieldLevel) bool {
+		return reExportImport.MatchString(fl.Field().String())
+	})
+	validate.RegisterValidation("msme", func(fl validator.FieldLevel) bool {
+		return reMSME.MatchString(fl.Field().String())
+	})
+	validate.RegisterValidation("gst", func(fl validator.FieldLevel) bool {
+		return reGST.MatchString(fl.Field().String())
+	})
+	validate.RegisterValidation("fassi", func(fl validator.FieldLevel) bool {
+		return reFassi.MatchString(fl.Field().String())
+	})
+}
+
 func Validate(v any) error {
 	if err := validate.Struct(v); err != nil {
 		var errs validator.ValidationErrors
@@ -26,7 +59,6 @@ func Validate(v any) error {
 	return nil
 }
 
-// AsValidationErrors unwraps a validator.ValidationErrors from err.
 func AsValidationErrors(err error, target *validator.ValidationErrors) bool {
 	if ve, ok := err.(validator.ValidationErrors); ok {
 		*target = ve
@@ -42,39 +74,32 @@ func fieldError(fe validator.FieldError) string {
 		return field + " is required"
 	case "email":
 		return field + " must be a valid email address"
-	case "min":
-		if fe.Kind().String() == "string" {
-			return fmt.Sprintf("%s must be at least %s characters", field, fe.Param())
-		}
-		return fmt.Sprintf("%s must be at least %s", field, fe.Param())
-	case "max":
-		if fe.Kind().String() == "string" {
-			return fmt.Sprintf("%s must be at most %s characters", field, fe.Param())
-		}
-		return fmt.Sprintf("%s must be at most %s", field, fe.Param())
-	case "numeric":
-		return field + " must contain only digits"
-	case "gt":
-		return fmt.Sprintf("%s must be greater than %s", field, fe.Param())
-	case "gte":
-		return fmt.Sprintf("%s must be greater than or equal to %s", field, fe.Param())
-	case "lte":
-		return fmt.Sprintf("%s must be less than or equal to %s", field, fe.Param())
-	case "oneof":
-		return fmt.Sprintf("%s must be one of: %s", field, strings.ReplaceAll(fe.Param(), " ", ", "))
+	case "phone":
+		return field + " must be a valid phone number (7-15 digits)"
+	case "aadhaar":
+		return field + " must be a valid 12-digit Aadhaar number"
+	case "pan":
+		return field + " must be a valid PAN (e.g. ABCDE1234F)"
+	case "export_import":
+		return field + " must be a valid 10-character IEC code"
+	case "msme":
+		return field + " must be a valid UDYAM number (e.g. UDYAM-MH-01-0000001)"
+	case "gst":
+		return field + " must be a valid 15-character GST number"
+	case "fassi":
+		return field + " must be a valid 14-digit FSSAI number"
 	default:
-		return fmt.Sprintf("%s is invalid (%s)", field, fe.Tag())
+		return field + " is invalid"
 	}
 }
 
-// toSnakeCase converts a PascalCase or camelCase field name to snake_case.
 func toSnakeCase(s string) string {
 	var result strings.Builder
 	for i, r := range s {
 		if i > 0 && r >= 'A' && r <= 'Z' {
 			result.WriteByte('_')
 		}
-		result.WriteRune(r | 0x20) // toLower
+		result.WriteRune(r | 0x20)
 	}
 	return result.String()
 }

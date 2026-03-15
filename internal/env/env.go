@@ -5,7 +5,6 @@ import (
 	"strconv"
 )
 
-// GetString reads an environment variable into a string or returns a fallback value.
 func GetString(key, fallback string) string {
 	val, ok := os.LookupEnv(key)
 	if !ok {
@@ -14,7 +13,6 @@ func GetString(key, fallback string) string {
 	return val
 }
 
-// GetInt reads an environment variable into an integer or returns a fallback value.
 func GetInt(key string, fallback int) int {
 	val, ok := os.LookupEnv(key)
 	if !ok {

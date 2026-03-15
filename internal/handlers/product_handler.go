@@ -41,11 +41,11 @@ func NewProductHandler(productStore store.ProductStore, logger *slog.Logger) *Pr
 func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, ph.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	product := &models.Product{
@@ -61,7 +61,7 @@ func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Req
 		IsProductActive: req.IsProductActive,
 	}
 	if err := ph.productStore.CreateProduct(product); err != nil {
-		serverError(w, ph.logger, "create product", err)
+		utils.ServerError(w, ph.logger, "create product", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "product created successfully", "product_id": product.ID})
@@ -84,16 +84,16 @@ func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Req
 func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	var req models.UpdateProductRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, ph.logger, "invalid request payload", err)
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	if err = ph.productStore.UpdateProduct(&models.Product{
@@ -111,7 +111,7 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		serverError(w, ph.logger, "update product", err)
+		utils.ServerError(w, ph.logger, "update product", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product updated successfully"})
@@ -132,7 +132,7 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	if err = ph.productStore.DeleteProduct(id); err != nil {
@@ -140,7 +140,7 @@ func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Req
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		serverError(w, ph.logger, "delete product", err)
+		utils.ServerError(w, ph.logger, "delete product", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product deleted successfully"})
@@ -165,7 +165,7 @@ func (ph *ProductHandler) HandleGetAllProducts(w http.ResponseWriter, r *http.Re
 	filter := utils.ReadProductFilter(r)
 	res, err := ph.productStore.GetAllProducts(filter, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, ph.logger, "get all products", err)
+		utils.ServerError(w, ph.logger, "get all products", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -191,13 +191,13 @@ func (ph *ProductHandler) HandleGetAllProducts(w http.ResponseWriter, r *http.Re
 func (ph *ProductHandler) HandleGetBusinessProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetBusinessProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, ph.logger, "get business products", err)
+		utils.ServerError(w, ph.logger, "get business products", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -223,13 +223,13 @@ func (ph *ProductHandler) HandleGetBusinessProducts(w http.ResponseWriter, r *ht
 func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetCategoryBasedProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, ph.logger, "get category based products", err)
+		utils.ServerError(w, ph.logger, "get category based products", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -255,13 +255,13 @@ func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, 
 func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetSubCategoryBasedProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, ph.logger, "get sub category based products", err)
+		utils.ServerError(w, ph.logger, "get sub category based products", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -287,13 +287,13 @@ func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWrite
 func (ph *ProductHandler) HandleGetFollowersProducts(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := ph.productStore.GetFollowersProducts(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, ph.logger, "get followers products", err)
+		utils.ServerError(w, ph.logger, "get followers products", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -318,7 +318,7 @@ func (ph *ProductHandler) HandleGetFollowersProducts(w http.ResponseWriter, r *h
 func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	res, err := ph.productStore.GetProductDetailsByID(id)
@@ -327,7 +327,7 @@ func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		serverError(w, ph.logger, "get product details by id", err)
+		utils.ServerError(w, ph.logger, "get product details by id", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product details fetched successfully", "product_details": res})
@@ -350,12 +350,12 @@ func (ph *ProductHandler) HandleGetProductDetailsByID(w http.ResponseWriter, r *
 func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
 	var req models.ChangeProductStatusRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, ph.logger, "invalid request payload", err)
 		return
 	}
 	if err = ph.productStore.ChangeProductActivateStatus(&models.Product{
@@ -366,7 +366,7 @@ func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWrite
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found"})
 			return
 		}
-		serverError(w, ph.logger, "change product active status", err)
+		utils.ServerError(w, ph.logger, "change product active status", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product status updated successfully"})

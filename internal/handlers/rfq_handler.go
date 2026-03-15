@@ -41,11 +41,11 @@ func NewRFQHandler(rfqStore store.RFQStore, logger *slog.Logger) *RFQHandler {
 func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateRFQRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, rh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
 	rfq := &models.RFQ{
@@ -59,7 +59,7 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 		IsRFQActive:   req.IsRFQActive,
 	}
 	if err := rh.rfqStore.CreateRFQ(rfq); err != nil {
-		serverError(w, rh.logger, "create rfq", err)
+		utils.ServerError(w, rh.logger, "create rfq", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "rfq created successfully", "rfq_id": rfq.ID})
@@ -82,12 +82,12 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
 	var req models.ActivateRFQRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, rh.logger, "invalid request payload", err)
 		return
 	}
 	if err = rh.rfqStore.ActivateRFQ(&models.RFQ{ID: id, IsRFQActive: req.IsRFQActive}); err != nil {
@@ -95,7 +95,7 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
 			return
 		}
-		serverError(w, rh.logger, "activate rfq", err)
+		utils.ServerError(w, rh.logger, "activate rfq", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq status updated successfully"})
@@ -118,16 +118,16 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
 	var req models.UpdateRFQRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, rh.logger, "invalid request payload", err)
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
 	if err = rh.rfqStore.UpdateRFQ(&models.RFQ{
@@ -143,7 +143,7 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
 			return
 		}
-		serverError(w, rh.logger, "update rfq", err)
+		utils.ServerError(w, rh.logger, "update rfq", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq updated successfully"})
@@ -164,7 +164,7 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
 	if err = rh.rfqStore.DeleteRFQ(id); err != nil {
@@ -172,7 +172,7 @@ func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
 			return
 		}
-		serverError(w, rh.logger, "delete rfq", err)
+		utils.ServerError(w, rh.logger, "delete rfq", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq deleted successfully"})
@@ -197,7 +197,7 @@ func (rh *RFQHandler) HandleGetAllRFQ(w http.ResponseWriter, r *http.Request) {
 	filter := utils.ReadRFQFilter(r)
 	res, err := rh.rfqStore.GetAllRFQ(filter, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, rh.logger, "get all rfq", err)
+		utils.ServerError(w, rh.logger, "get all rfq", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -223,13 +223,13 @@ func (rh *RFQHandler) HandleGetAllRFQ(w http.ResponseWriter, r *http.Request) {
 func (rh *RFQHandler) HandleGetRFQByBusinessID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := rh.rfqStore.GetRFQByBusinessID(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, rh.logger, "get rfq by business id", err)
+		utils.ServerError(w, rh.logger, "get rfq by business id", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{

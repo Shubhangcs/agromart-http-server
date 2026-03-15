@@ -29,11 +29,11 @@ func NewBusinessHandler(businessStore store.BusinessStore, logger *slog.Logger) 
 func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBusinessRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	business := &models.Business{
@@ -48,7 +48,7 @@ func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.R
 		BusinessType: req.BusinessType,
 	}
 	if err := bh.businessStore.CreateBusiness(business); err != nil {
-		serverError(w, bh.logger, "create business", err)
+		utils.ServerError(w, bh.logger, "create business", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "business created successfully", "business_id": business.ID})
@@ -69,11 +69,11 @@ func (bh *BusinessHandler) HandleCreateBusiness(w http.ResponseWriter, r *http.R
 func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSocialRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	social := &models.Social{
@@ -87,7 +87,7 @@ func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Req
 		Website:   req.Website,
 	}
 	if err := bh.businessStore.CreateSocial(social); err != nil {
-		serverError(w, bh.logger, "create social", err)
+		utils.ServerError(w, bh.logger, "create social", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "business socials created successfully"})
@@ -108,11 +108,11 @@ func (bh *BusinessHandler) HandleCreateSocial(w http.ResponseWriter, r *http.Req
 func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateLegalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	legal := &models.Legal{
@@ -125,7 +125,7 @@ func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Requ
 		GST:          req.GST,
 	}
 	if err := bh.businessStore.CreateLegal(legal); err != nil {
-		serverError(w, bh.logger, "create legal", err)
+		utils.ServerError(w, bh.logger, "create legal", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "business legals created successfully"})
@@ -146,15 +146,15 @@ func (bh *BusinessHandler) HandleCreateLegal(w http.ResponseWriter, r *http.Requ
 func (bh *BusinessHandler) HandleCreateBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateApplicationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err := bh.businessStore.CreateBusinessApplication(&models.BusinessApplication{ID: req.ID, Status: "APPLIED"}); err != nil {
-		serverError(w, bh.logger, "create business application", err)
+		utils.ServerError(w, bh.logger, "create business application", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "business application created successfully"})
@@ -176,16 +176,16 @@ func (bh *BusinessHandler) HandleCreateBusinessApplication(w http.ResponseWriter
 func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.UpdateBusinessRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err = bh.businessStore.UpdateBusiness(&models.Business{
@@ -199,7 +199,7 @@ func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.R
 		Pincode:      req.Pincode,
 		BusinessType: req.BusinessType,
 	}); err != nil {
-		serverError(w, bh.logger, "update business", err)
+		utils.ServerError(w, bh.logger, "update business", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business profile updated successfully"})
@@ -221,16 +221,16 @@ func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.R
 func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.CreateSocialRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err = bh.businessStore.UpdateSocial(&models.Social{
@@ -243,7 +243,7 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 		Facebook:  req.Facebook,
 		Website:   req.Website,
 	}); err != nil {
-		serverError(w, bh.logger, "update socials", err)
+		utils.ServerError(w, bh.logger, "update socials", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business social details updated successfully"})
@@ -265,12 +265,12 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.CreateLegalRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = bh.businessStore.UpdateLegal(&models.Legal{
@@ -282,7 +282,7 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 		Fassi:        req.Fassi,
 		GST:          req.GST,
 	}); err != nil {
-		serverError(w, bh.logger, "update legals", err)
+		utils.ServerError(w, bh.logger, "update legals", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business legal details updated successfully"})
@@ -303,7 +303,7 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err = bh.businessStore.AcceptBusinessApplication(id); err != nil {
@@ -311,7 +311,7 @@ func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		serverError(w, bh.logger, "accept business application", err)
+		utils.ServerError(w, bh.logger, "accept business application", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business application accepted successfully"})
@@ -334,16 +334,16 @@ func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter
 func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.RejectApplicationRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err = bh.businessStore.RejectBusinessApplication(&models.BusinessApplication{
@@ -355,7 +355,7 @@ func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		serverError(w, bh.logger, "reject business application", err)
+		utils.ServerError(w, bh.logger, "reject business application", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business application rejected successfully"})
@@ -376,7 +376,7 @@ func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter
 func (bh *BusinessHandler) HandleGetCompleteBusinessDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	res, err := bh.businessStore.GetCompleteBusinessDetails(id)
@@ -385,7 +385,7 @@ func (bh *BusinessHandler) HandleGetCompleteBusinessDetails(w http.ResponseWrite
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		serverError(w, bh.logger, "get complete business details", err)
+		utils.ServerError(w, bh.logger, "get complete business details", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business details fetched successfully", "details": res})
@@ -406,7 +406,7 @@ func (bh *BusinessHandler) HandleGetCompleteBusinessDetails(w http.ResponseWrite
 func (bh *BusinessHandler) HandleGetBusinessDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	res, err := bh.businessStore.GetBusiness(id)
@@ -415,7 +415,7 @@ func (bh *BusinessHandler) HandleGetBusinessDetails(w http.ResponseWriter, r *ht
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		serverError(w, bh.logger, "get business details", err)
+		utils.ServerError(w, bh.logger, "get business details", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business details fetched successfully", "details": res})
@@ -436,7 +436,7 @@ func (bh *BusinessHandler) HandleGetBusinessDetails(w http.ResponseWriter, r *ht
 func (bh *BusinessHandler) HandleGetSocialDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	res, err := bh.businessStore.GetSocial(id)
@@ -445,7 +445,7 @@ func (bh *BusinessHandler) HandleGetSocialDetails(w http.ResponseWriter, r *http
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "social details not found"})
 			return
 		}
-		serverError(w, bh.logger, "get business social details", err)
+		utils.ServerError(w, bh.logger, "get business social details", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business social details fetched successfully", "details": res})
@@ -466,7 +466,7 @@ func (bh *BusinessHandler) HandleGetSocialDetails(w http.ResponseWriter, r *http
 func (bh *BusinessHandler) HandleGetLegalDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	res, err := bh.businessStore.GetLegal(id)
@@ -475,7 +475,7 @@ func (bh *BusinessHandler) HandleGetLegalDetails(w http.ResponseWriter, r *http.
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "legal details not found"})
 			return
 		}
-		serverError(w, bh.logger, "get business legal details", err)
+		utils.ServerError(w, bh.logger, "get business legal details", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business legal details fetched successfully", "details": res})
@@ -496,7 +496,7 @@ func (bh *BusinessHandler) HandleGetLegalDetails(w http.ResponseWriter, r *http.
 func (bh *BusinessHandler) HandleGetBusinessApplicationDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	res, err := bh.businessStore.GetBusinessApplication(id)
@@ -505,7 +505,7 @@ func (bh *BusinessHandler) HandleGetBusinessApplicationDetails(w http.ResponseWr
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "application not found"})
 			return
 		}
-		serverError(w, bh.logger, "get business application details", err)
+		utils.ServerError(w, bh.logger, "get business application details", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business application details fetched successfully", "details": res})
@@ -527,20 +527,20 @@ func (bh *BusinessHandler) HandleGetBusinessApplicationDetails(w http.ResponseWr
 func (bh *BusinessHandler) HandleUpdateVerifyBusinessStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.UpdateBusinessStatusRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err = bh.businessStore.UpdateVerifyBusinessStatus(id, req.Status); err != nil {
-		serverError(w, bh.logger, "update verify business status", err)
+		utils.ServerError(w, bh.logger, "update verify business status", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business verified status updated successfully"})
@@ -562,16 +562,16 @@ func (bh *BusinessHandler) HandleUpdateVerifyBusinessStatus(w http.ResponseWrite
 func (bh *BusinessHandler) HandleUpdateTrustBusinessStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.UpdateBusinessStatusRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = bh.businessStore.UpdateTrustBusinessStatus(id, req.Status); err != nil {
-		serverError(w, bh.logger, "update trust business status", err)
+		utils.ServerError(w, bh.logger, "update trust business status", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business trusted status updated successfully"})
@@ -593,16 +593,16 @@ func (bh *BusinessHandler) HandleUpdateTrustBusinessStatus(w http.ResponseWriter
 func (bh *BusinessHandler) HandleUpdateBlockBusinessStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	var req models.UpdateBusinessStatusRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
 	if err = bh.businessStore.UpdateBlockBusinessStatus(id, req.Status); err != nil {
-		serverError(w, bh.logger, "update block business status", err)
+		utils.ServerError(w, bh.logger, "update block business status", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business blocked status updated successfully"})
@@ -623,7 +623,7 @@ func (bh *BusinessHandler) HandleGetAllBusinesses(w http.ResponseWriter, r *http
 	pg := utils.ReadPaginationParams(r)
 	res, err := bh.businessStore.GetAllBusinesses(pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, bh.logger, "get all businesses", err)
+		utils.ServerError(w, bh.logger, "get all businesses", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -648,7 +648,7 @@ func (bh *BusinessHandler) HandleGetAllBusinesses(w http.ResponseWriter, r *http
 func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	if err = bh.businessStore.DeleteBusiness(id); err != nil {
@@ -656,7 +656,7 @@ func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.R
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "business not found"})
 			return
 		}
-		serverError(w, bh.logger, "delete business", err)
+		utils.ServerError(w, bh.logger, "delete business", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business deleted successfully"})
@@ -677,12 +677,12 @@ func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.R
 func (bh *BusinessHandler) HandleGetBusinessIDByUserID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	businessID, err := bh.businessStore.GetBusinessIDByUserID(id)
 	if err != nil {
-		serverError(w, bh.logger, "get business id by user id", err)
+		utils.ServerError(w, bh.logger, "get business id by user id", err)
 		return
 	}
 	if businessID == nil {
@@ -706,12 +706,12 @@ func (bh *BusinessHandler) HandleGetBusinessIDByUserID(w http.ResponseWriter, r 
 func (bh *BusinessHandler) HandleIsBusinessApproved(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
 	isApproved, err := bh.businessStore.IsBusinessApproved(id)
 	if err != nil {
-		serverError(w, bh.logger, "is business approved", err)
+		utils.ServerError(w, bh.logger, "is business approved", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"status": isApproved})

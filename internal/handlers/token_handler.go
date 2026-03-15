@@ -57,11 +57,11 @@ func fullName(first string, last *string) string {
 func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, th.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, th.logger, err.Error(), err)
 		return
 	}
 
@@ -71,13 +71,13 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
-		serverError(w, th.logger, "admin login", err)
+		utils.ServerError(w, th.logger, "admin login", err)
 		return
 	}
 
 	matched, err := admin.Password.Matches(req.Password)
 	if err != nil {
-		serverError(w, th.logger, "admin login: password comparison", err)
+		utils.ServerError(w, th.logger, "admin login: password comparison", err)
 		return
 	}
 	if !matched {
@@ -87,7 +87,7 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 
 	token, err := tokens.GenerateNewToken(admin.ID, fullName(admin.FirstName, admin.LastName), nil)
 	if err != nil {
-		serverError(w, th.logger, "admin login: token generation", err)
+		utils.ServerError(w, th.logger, "admin login: token generation", err)
 		return
 	}
 
@@ -109,11 +109,11 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, th.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, th.logger, err.Error(), err)
 		return
 	}
 
@@ -123,13 +123,13 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 			return
 		}
-		serverError(w, th.logger, "user login", err)
+		utils.ServerError(w, th.logger, "user login", err)
 		return
 	}
 
 	matched, err := user.Password.Matches(req.Password)
 	if err != nil {
-		serverError(w, th.logger, "user login: password comparison", err)
+		utils.ServerError(w, th.logger, "user login: password comparison", err)
 		return
 	}
 	if !matched {
@@ -139,13 +139,13 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 
 	businessID, err := th.businessStore.GetBusinessIDByUserID(user.ID)
 	if err != nil {
-		serverError(w, th.logger, "user login: fetch business id", err)
+		utils.ServerError(w, th.logger, "user login: fetch business id", err)
 		return
 	}
 
 	token, err := tokens.GenerateNewToken(user.ID, fullName(user.FirstName, user.LastName), businessID)
 	if err != nil {
-		serverError(w, th.logger, "user login: token generation", err)
+		utils.ServerError(w, th.logger, "user login: token generation", err)
 		return
 	}
 

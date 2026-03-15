@@ -41,11 +41,11 @@ func NewRatingHandler(ratingStore store.RatingStore, logger *slog.Logger) *Ratin
 func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request) {
 	var req models.RateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, h.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	rating := &models.ProductRating{
@@ -54,7 +54,7 @@ func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request
 		Rating:    req.Rating,
 	}
 	if err := h.ratingStore.RateProduct(rating); err != nil {
-		serverError(w, h.logger, "rate product", err)
+		utils.ServerError(w, h.logger, "rate product", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -77,12 +77,12 @@ func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request
 func (h *RatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	avg, err := h.ratingStore.GetAverageProductRating(id)
 	if err != nil {
-		serverError(w, h.logger, "get average product rating", err)
+		utils.ServerError(w, h.logger, "get average product rating", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -107,13 +107,13 @@ func (h *RatingHandler) HandleGetAverageProductRating(w http.ResponseWriter, r *
 func (h *RatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := h.ratingStore.GetRatingsByProductID(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, h.logger, "get product ratings", err)
+		utils.ServerError(w, h.logger, "get product ratings", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -138,7 +138,7 @@ func (h *RatingHandler) HandleGetProductRatings(w http.ResponseWriter, r *http.R
 func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	if err = h.ratingStore.DeleteProductRating(id); err != nil {
@@ -146,7 +146,7 @@ func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rating not found"})
 			return
 		}
-		serverError(w, h.logger, "delete product rating", err)
+		utils.ServerError(w, h.logger, "delete product rating", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product rating deleted successfully"})
@@ -167,11 +167,11 @@ func (h *RatingHandler) HandleDeleteProductRating(w http.ResponseWriter, r *http
 func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Request) {
 	var req models.RateBusinessRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, h.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	if err := h.ratingStore.RateBusiness(&models.BusinessRating{
@@ -179,7 +179,7 @@ func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Reques
 		UserID:     req.UserID,
 		Rating:     req.Rating,
 	}); err != nil {
-		serverError(w, h.logger, "rate business", err)
+		utils.ServerError(w, h.logger, "rate business", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business rated successfully"})
@@ -199,12 +199,12 @@ func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Reques
 func (h *RatingHandler) HandleGetAverageBusinessRating(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	avg, err := h.ratingStore.GetAverageBusinessRating(id)
 	if err != nil {
-		serverError(w, h.logger, "get average business rating", err)
+		utils.ServerError(w, h.logger, "get average business rating", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -227,12 +227,12 @@ func (h *RatingHandler) HandleGetAverageBusinessRating(w http.ResponseWriter, r 
 func (h *RatingHandler) HandleGetBusinessRatings(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
 	res, err := h.ratingStore.GetRatingsByBusinessID(id)
 	if err != nil {
-		serverError(w, h.logger, "get business ratings", err)
+		utils.ServerError(w, h.logger, "get business ratings", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{

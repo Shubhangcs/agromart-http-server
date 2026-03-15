@@ -33,6 +33,7 @@ func Connect() (*AWSS3, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
+	
 	awsCfg, err := config.LoadDefaultConfig(
 		ctx,
 		config.WithRegion(region),

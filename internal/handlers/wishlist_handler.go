@@ -46,16 +46,16 @@ func (wh *WishlistHandler) HandleAddToWishlist(w http.ResponseWriter, r *http.Re
 
 	var req models.AddToWishlistRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, wh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, wh.logger, err.Error(), err)
 		return
 	}
 
 	if err := wh.wishlistStore.AddToWishlist(claims.UserID, req.ProductID); err != nil {
-		serverError(w, wh.logger, "add to wishlist", err)
+		utils.ServerError(w, wh.logger, "add to wishlist", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "product added to wishlist"})
@@ -81,7 +81,7 @@ func (wh *WishlistHandler) HandleRemoveFromWishlist(w http.ResponseWriter, r *ht
 
 	productID := chi.URLParam(r, "product_id")
 	if productID == "" {
-		badRequest(w, "product_id is required")
+		utils.BadRequest(w, wh.logger, "product_id is required", nil)
 		return
 	}
 
@@ -90,7 +90,7 @@ func (wh *WishlistHandler) HandleRemoveFromWishlist(w http.ResponseWriter, r *ht
 			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "product not found in wishlist"})
 			return
 		}
-		serverError(w, wh.logger, "remove from wishlist", err)
+		utils.ServerError(w, wh.logger, "remove from wishlist", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product removed from wishlist"})
@@ -117,7 +117,7 @@ func (wh *WishlistHandler) HandleGetWishlist(w http.ResponseWriter, r *http.Requ
 	pg := utils.ReadPaginationParams(r)
 	items, err := wh.wishlistStore.GetUserWishlist(claims.UserID, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, wh.logger, "get wishlist", err)
+		utils.ServerError(w, wh.logger, "get wishlist", err)
 		return
 	}
 	if items == nil {
@@ -148,13 +148,13 @@ func (wh *WishlistHandler) HandleIsInWishlist(w http.ResponseWriter, r *http.Req
 
 	productID := chi.URLParam(r, "product_id")
 	if productID == "" {
-		badRequest(w, "product_id is required")
+		utils.BadRequest(w, wh.logger, "product_id is required", nil)
 		return
 	}
 
 	exists, err := wh.wishlistStore.IsInWishlist(claims.UserID, productID)
 	if err != nil {
-		serverError(w, wh.logger, "check wishlist", err)
+		utils.ServerError(w, wh.logger, "check wishlist", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"in_wishlist": exists})

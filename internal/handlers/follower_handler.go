@@ -27,18 +27,18 @@ func NewFollowerHandler(followerStore store.FollowerStore, logger *slog.Logger) 
 func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.Request) {
 	var req models.FollowRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, fh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
 	if err := fh.followerStore.CreateFollower(&models.Follower{
 		UserID:     req.UserID,
 		BusinessID: req.BusinessID,
 	}); err != nil {
-		serverError(w, fh.logger, "create follower", err)
+		utils.ServerError(w, fh.logger, "create follower", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "followed successfully"})
@@ -59,18 +59,18 @@ func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.R
 func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.Request) {
 	var req models.FollowRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		badRequest(w, "invalid request payload")
+		utils.BadRequest(w, fh.logger, "invalid request payload", err)
 		return
 	}
 	if err := validator.Validate(&req); err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
 	if err := fh.followerStore.RemoveFollower(&models.Follower{
 		UserID:     req.UserID,
 		BusinessID: req.BusinessID,
 	}); err != nil {
-		serverError(w, fh.logger, "remove follower", err)
+		utils.ServerError(w, fh.logger, "remove follower", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "unfollowed successfully"})
@@ -90,12 +90,12 @@ func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.R
 func (fh *FollowerHandler) HandleGetFollowersCount(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
 	count, err := fh.followerStore.GetFollowersCount(id)
 	if err != nil {
-		serverError(w, fh.logger, "get followers count", err)
+		utils.ServerError(w, fh.logger, "get followers count", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "follower count fetched successfully", "followers_count": count})
@@ -115,12 +115,12 @@ func (fh *FollowerHandler) HandleGetFollowersCount(w http.ResponseWriter, r *htt
 func (fh *FollowerHandler) HandleGetFollowingCount(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
 	count, err := fh.followerStore.GetFollowingCount(id)
 	if err != nil {
-		serverError(w, fh.logger, "get following count", err)
+		utils.ServerError(w, fh.logger, "get following count", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "following count fetched successfully", "following_count": count})
@@ -142,13 +142,13 @@ func (fh *FollowerHandler) HandleGetFollowingCount(w http.ResponseWriter, r *htt
 func (fh *FollowerHandler) HandleGetAllFollowers(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := fh.followerStore.GetAllFollowers(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, fh.logger, "get all followers", err)
+		utils.ServerError(w, fh.logger, "get all followers", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
@@ -174,13 +174,13 @@ func (fh *FollowerHandler) HandleGetAllFollowers(w http.ResponseWriter, r *http.
 func (fh *FollowerHandler) HandleGetAllFollowing(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		badRequest(w, err.Error())
+		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
 	res, err := fh.followerStore.GetAllFollowing(id, pg.Limit, pg.Offset())
 	if err != nil {
-		serverError(w, fh.logger, "get all following", err)
+		utils.ServerError(w, fh.logger, "get all following", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
