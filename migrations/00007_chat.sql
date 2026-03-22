@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS messages (
     receiver_id UUID      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     content     TEXT      NOT NULL,
     is_read     BOOLEAN   NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW ()
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- +goose StatementEnd
 

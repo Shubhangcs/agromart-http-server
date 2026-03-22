@@ -47,6 +47,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 		productRoutes(app, r)
 		chatRESTRoutes(app, r)
 		wishlistRoutes(app, r)
+		leadRoutes(app, r)
 	})
 
 	return r
@@ -191,6 +192,15 @@ func wishlistRoutes(app *app.Application, r chi.Router) {
 		r.Delete("/remove/{product_id}", app.WishlistHandler.HandleRemoveFromWishlist)
 		r.Get("/get", app.WishlistHandler.HandleGetWishlist)
 		r.Get("/check/{product_id}", app.WishlistHandler.HandleIsInWishlist)
+	})
+}
+
+func leadRoutes(app *app.Application, r chi.Router) {
+	r.Route("/leads", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+		r.Post("/create", app.LeadHandler.HandleCreateLead)
+		r.Get("/sent/{id}", app.LeadHandler.HandleGetSentLeads)
+		r.Get("/received/{id}", app.LeadHandler.HandleGetReceivedLeads)
 	})
 }
 

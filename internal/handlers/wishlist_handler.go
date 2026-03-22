@@ -1,16 +1,15 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
-	"database/sql"
 	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
-	"github.com/shubhangcs/agromart-server/internal/tokens"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 	"github.com/shubhangcs/agromart-server/internal/validator"
 )
@@ -39,10 +38,7 @@ func NewWishlistHandler(wishlistStore store.WishlistStore, logger *slog.Logger) 
 // @Security     BearerAuth
 // @Router       /wishlist/add [post]
 func (wh *WishlistHandler) HandleAddToWishlist(w http.ResponseWriter, r *http.Request) {
-	claims, ok := wh.claims(w, r)
-	if !ok {
-		return
-	}
+	claims := claimsFromCtx(r)
 
 	var req models.AddToWishlistRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -74,10 +70,7 @@ func (wh *WishlistHandler) HandleAddToWishlist(w http.ResponseWriter, r *http.Re
 // @Security     BearerAuth
 // @Router       /wishlist/remove/{product_id} [delete]
 func (wh *WishlistHandler) HandleRemoveFromWishlist(w http.ResponseWriter, r *http.Request) {
-	claims, ok := wh.claims(w, r)
-	if !ok {
-		return
-	}
+	claims := claimsFromCtx(r)
 
 	productID := chi.URLParam(r, "product_id")
 	if productID == "" {
@@ -109,10 +102,7 @@ func (wh *WishlistHandler) HandleRemoveFromWishlist(w http.ResponseWriter, r *ht
 // @Security     BearerAuth
 // @Router       /wishlist/get [get]
 func (wh *WishlistHandler) HandleGetWishlist(w http.ResponseWriter, r *http.Request) {
-	claims, ok := wh.claims(w, r)
-	if !ok {
-		return
-	}
+	claims := claimsFromCtx(r)
 
 	pg := utils.ReadPaginationParams(r)
 	items, err := wh.wishlistStore.GetUserWishlist(claims.UserID, pg.Limit, pg.Offset())
@@ -141,10 +131,7 @@ func (wh *WishlistHandler) HandleGetWishlist(w http.ResponseWriter, r *http.Requ
 // @Security     BearerAuth
 // @Router       /wishlist/check/{product_id} [get]
 func (wh *WishlistHandler) HandleIsInWishlist(w http.ResponseWriter, r *http.Request) {
-	claims, ok := wh.claims(w, r)
-	if !ok {
-		return
-	}
+	claims := claimsFromCtx(r)
 
 	productID := chi.URLParam(r, "product_id")
 	if productID == "" {
@@ -158,14 +145,4 @@ func (wh *WishlistHandler) HandleIsInWishlist(w http.ResponseWriter, r *http.Req
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"in_wishlist": exists})
-}
-
-// claims extracts JWT claims from the request context, writing a 401 if missing.
-func (wh *WishlistHandler) claims(w http.ResponseWriter, r *http.Request) (*tokens.Token, bool) {
-	c, _ := r.Context().Value("claims").(*tokens.Token)
-	if c == nil {
-		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "unauthorized"})
-		return nil, false
-	}
-	return c, true
 }

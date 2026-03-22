@@ -194,10 +194,6 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 // @Router       /chat/send [post]
 func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
 	claims := claimsFromCtx(r)
-	if claims == nil {
-		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "unauthorized"})
-		return
-	}
 	senderID := claims.UserID
 
 	var req models.SendMessageRequest
@@ -247,10 +243,6 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 // @Router       /chat/history [get]
 func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Request) {
 	claims := claimsFromCtx(r)
-	if claims == nil {
-		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "unauthorized"})
-		return
-	}
 	myID := claims.UserID
 
 	withUserID := r.URL.Query().Get("with_user_id")
@@ -297,10 +289,6 @@ func (ch *ChatHandler) HandleGetChatHistory(w http.ResponseWriter, r *http.Reque
 // @Router       /chat/read [put]
 func (ch *ChatHandler) HandleMarkAsRead(w http.ResponseWriter, r *http.Request) {
 	claims := claimsFromCtx(r)
-	if claims == nil {
-		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "unauthorized"})
-		return
-	}
 	receiverID := claims.UserID // the authenticated user is the one marking their messages as read
 
 	senderID := r.URL.Query().Get("sender_id")

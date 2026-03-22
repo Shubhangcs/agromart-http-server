@@ -40,6 +40,9 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages (
 CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists (user_id);
 CREATE INDEX IF NOT EXISTS idx_wishlists_product_id ON wishlists (product_id);
 
+CREATE INDEX IF NOT EXISTS idx_leads_enquirer_business_id ON leads (enquirer_business_id);
+CREATE INDEX IF NOT EXISTS idx_leads_enquire_to_id ON leads (enquire_to_id);
+
 DO $$
 BEGIN
     -- Drop old single-column unique constraint if it exists (from old schema)
