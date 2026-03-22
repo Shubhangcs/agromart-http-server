@@ -53,6 +53,7 @@ func (lh *LeadHandler) HandleCreateLead(w http.ResponseWriter, r *http.Request) 
 		EnquireToID:        req.EnquireToID,
 		ProductID:          req.ProductID,
 		EnquiryMessage:     req.EnquiryMessage,
+		OrderQuantity:      req.OrderQuantity,
 		ExpectedPrice:      req.ExpectedPrice,
 	}
 

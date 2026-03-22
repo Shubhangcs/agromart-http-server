@@ -12,6 +12,7 @@ type Lead struct {
 	EnquireToID        string    `json:"enquire_to_id"`
 	ProductID          string    `json:"product_id"`
 	EnquiryMessage     string    `json:"enquiry_message"`
+	OrderQuantity      float64   `json:"order_quantity"`
 	ExpectedPrice      float64   `json:"expected_price"`
 	CreatedAT          time.Time `json:"created_at"`
 }
@@ -25,6 +26,7 @@ type CreateLeadRequest struct {
 	EnquireToID        string  `json:"enquire_to_id"        validate:"required"`
 	ProductID          string  `json:"product_id"           validate:"required"`
 	EnquiryMessage     string  `json:"enquiry_message"      validate:"required"`
+	OrderQuantity      float64 `json:"order_quantity"`
 	ExpectedPrice      float64 `json:"expected_price"`
 }
 
@@ -48,6 +50,7 @@ type LeadSentResponse struct {
 	SellerState               string    `json:"seller_state"`
 	SellerPincode             string    `json:"seller_pincode"`
 	EnquiryMessage            string    `json:"enquiry_message"`
+	OrderQuantity             float64   `json:"order_quantity"`
 	ExpectedPrice             float64   `json:"expected_price"`
 	CreatedAT                 time.Time `json:"created_at"`
 }
@@ -70,6 +73,7 @@ type LeadReceivedResponse struct {
 	EnquirerState                string    `json:"enquirer_state"`
 	EnquirerPincode              string    `json:"enquirer_pincode"`
 	EnquiryMessage               string    `json:"enquiry_message"`
+	OrderQuantity                float64   `json:"order_quantity"`
 	ExpectedPrice                float64   `json:"expected_price"`
 	CreatedAT                    time.Time `json:"created_at"`
 }

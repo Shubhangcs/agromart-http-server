@@ -22,12 +22,12 @@ func NewPostgresLeadStore(db *sql.DB) *PostgresLeadStore {
 
 func (ls *PostgresLeadStore) CreateLead(l *models.Lead) error {
 	query := `
-	INSERT INTO leads (enquirer_business_id, enquire_to_id, product_id, enquiry_message, expected_price)
-	VALUES ($1, $2, $3, $4, $5)
+	INSERT INTO leads (enquirer_business_id, enquire_to_id, product_id, enquiry_message, order_quantity, expected_price)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING lead_id, created_at
 	`
 	return ls.db.QueryRow(query,
-		l.EnquirerBusinessID, l.EnquireToID, l.ProductID, l.EnquiryMessage, l.ExpectedPrice,
+		l.EnquirerBusinessID, l.EnquireToID, l.ProductID, l.EnquiryMessage, l.OrderQuantity, l.ExpectedPrice,
 	).Scan(&l.LeadID, &l.CreatedAT)
 }
 
@@ -40,7 +40,7 @@ func (ls *PostgresLeadStore) GetSentLeads(enquirerBusinessID string, limit, offs
 		(SELECT image FROM product_images WHERE product_id = p.id ORDER BY image_index ASC LIMIT 1),
 		b.id, b.business_name, b.business_email, b.business_phone, b.business_profile_image,
 		b.address, b.city, b.state, b.pincode,
-		l.enquiry_message, l.expected_price, l.created_at
+		l.enquiry_message, l.order_quantity, l.expected_price, l.created_at
 	FROM leads l
 	JOIN products p   ON p.id  = l.product_id
 	JOIN businesses b ON b.id  = l.enquire_to_id
@@ -62,7 +62,7 @@ func (ls *PostgresLeadStore) GetSentLeads(enquirerBusinessID string, limit, offs
 			&lead.ProductImage,
 			&lead.SellerBusinessID, &lead.SellerBusinessName, &lead.SellerBusinessEmail, &lead.SellerBusinessPhone, &lead.SellerBusinessProfileImage,
 			&lead.SellerAddress, &lead.SellerCity, &lead.SellerState, &lead.SellerPincode,
-			&lead.EnquiryMessage, &lead.ExpectedPrice, &lead.CreatedAT,
+			&lead.EnquiryMessage, &lead.OrderQuantity, &lead.ExpectedPrice, &lead.CreatedAT,
 		); err != nil {
 			return nil, err
 		}
@@ -80,7 +80,7 @@ func (ls *PostgresLeadStore) GetReceivedLeads(sellerBusinessID string, limit, of
 		(SELECT image FROM product_images WHERE product_id = p.id ORDER BY image_index ASC LIMIT 1),
 		eb.id, eb.business_name, eb.business_email, eb.business_phone, eb.business_profile_image,
 		eb.address, eb.city, eb.state, eb.pincode,
-		l.enquiry_message, l.expected_price, l.created_at
+		l.enquiry_message, l.order_quantity, l.expected_price, l.created_at
 	FROM leads l
 	JOIN products p    ON p.id  = l.product_id
 	JOIN businesses eb ON eb.id = l.enquirer_business_id
@@ -102,7 +102,7 @@ func (ls *PostgresLeadStore) GetReceivedLeads(sellerBusinessID string, limit, of
 			&lead.ProductImage,
 			&lead.EnquirerBusinessID, &lead.EnquirerBusinessName, &lead.EnquirerBusinessEmail, &lead.EnquirerBusinessPhone, &lead.EnquirerBusinessProfileImage,
 			&lead.EnquirerAddress, &lead.EnquirerCity, &lead.EnquirerState, &lead.EnquirerPincode,
-			&lead.EnquiryMessage, &lead.ExpectedPrice, &lead.CreatedAT,
+			&lead.EnquiryMessage, &lead.OrderQuantity, &lead.ExpectedPrice, &lead.CreatedAT,
 		); err != nil {
 			return nil, err
 		}
