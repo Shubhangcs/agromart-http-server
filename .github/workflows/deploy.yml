@@ -91,6 +91,23 @@ jobs:
             pm2 startOrRestart ecosystem.config.js --update-env
 
             pm2 save
-            echo "Deployment successful"
+
+            # Wait briefly for the process to settle
+            sleep 5
+
+            echo "--- PM2 Status ---"
             pm2 status
+
+            echo "--- PM2 Logs (last 50 lines) ---"
+            pm2 logs agromart-server --lines 50 --nostream
+
+            # Fail the deploy if the process is not online
+            STATUS=$(pm2 jlist | python3 -c "import sys,json; procs=json.load(sys.stdin); p=next((x for x in procs if x['name']=='agromart-server'),None); print(p['pm2_env']['status'] if p else 'not_found')")
+            echo "Process status: $STATUS"
+            if [ "$STATUS" != "online" ]; then
+              echo "Deployment failed: process is not online"
+              exit 1
+            fi
+
+            echo "Deployment successful"
           ENDSSH
