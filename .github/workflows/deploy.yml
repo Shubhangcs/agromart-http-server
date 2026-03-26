@@ -51,7 +51,9 @@ jobs:
                   JWT_TOKEN_ISSUER: "${{ secrets.JWT_TOKEN_ISSUER }}",
                   ACCESS_KEY: "${{ secrets.ACCESS_KEY }}",
                   SECRET_KEY: "${{ secrets.SECRET_KEY }}",
-                  BUCKET_NAME: "${{ secrets.BUCKET_NAME }}"
+                  BUCKET_NAME: "${{ secrets.BUCKET_NAME }}",
+                  DATABASE_SSL_MODE: "${{secrets.DATABASE_SSL_MODE}}",
+                  REGION: "${{secrets.REGION}}"
                 }
               }
             ]
