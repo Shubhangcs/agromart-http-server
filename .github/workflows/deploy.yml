@@ -1,0 +1,95 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 0
+        run: go build -ldflags="-s -w" -o agromart-server .
+
+      - name: Create PM2 ecosystem config
+        run: |
+          cat > ecosystem.config.js << 'ECOSYSTEM'
+          module.exports = {
+            apps: [
+              {
+                name: "agromart-server",
+                script: "./agromart-server",
+                interpreter: "none",
+                autorestart: true,
+                watch: false,
+                max_restarts: 10,
+                restart_delay: 3000,
+                env: {
+                  PORT: "${{ secrets.PORT }}",
+                  DATABASE_HOST: "${{ secrets.DATABASE_HOST }}",
+                  DATABASE_PORT: "${{ secrets.DATABASE_PORT }}",
+                  DATABASE_USER: "${{ secrets.DATABASE_USER }}",
+                  DATABASE_NAME: "${{ secrets.DATABASE_NAME }}",
+                  DATABASE_PASSWORD: "${{ secrets.DATABASE_PASSWORD }}",
+                  JWT_SECRET_KEY: "${{ secrets.JWT_SECRET_KEY }}",
+                  JWT_TOKEN_ISSUER: "${{ secrets.JWT_TOKEN_ISSUER }}",
+                  ACCESS_KEY: "${{ secrets.ACCESS_KEY }}",
+                  SECRET_KEY: "${{ secrets.SECRET_KEY }}",
+                  BUCKET_NAME: "${{ secrets.BUCKET_NAME }}"
+                }
+              }
+            ]
+          };
+          ECOSYSTEM
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VM_IP }}" >> ~/.ssh/known_hosts
+
+      - name: Copy files to VM
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" \
+            "mkdir -p ~/agromart"
+          scp -i ~/.ssh/deploy_key \
+            agromart-server \
+            ecosystem.config.js \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}:~/agromart/"
+
+      - name: Deploy with PM2
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
+            set -e
+            cd ~/agromart
+
+            chmod +x agromart-server
+
+            # Reload if already running, otherwise start fresh
+            if pm2 describe agromart-server > /dev/null 2>&1; then
+              pm2 reload ecosystem.config.js --update-env
+            else
+              pm2 start ecosystem.config.js
+            fi
+
+            pm2 save
+            echo "Deployment successful"
+            pm2 status
+          ENDSSH
