@@ -76,8 +76,11 @@ jobs:
 
       - name: Deploy with PM2
         run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash -l << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
             set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
             cd ~/agromart
 
             chmod +x agromart-server
