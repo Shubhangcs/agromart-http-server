@@ -87,12 +87,8 @@ jobs:
 
             chmod +x agromart-server
 
-            # Reload if already running, otherwise start fresh
-            if pm2 describe agromart-server > /dev/null 2>&1; then
-              pm2 reload ecosystem.config.js --update-env
-            else
-              pm2 start ecosystem.config.js
-            fi
+            # Start if not running, restart if already running
+            pm2 startOrRestart ecosystem.config.js --update-env
 
             pm2 save
             echo "Deployment successful"
