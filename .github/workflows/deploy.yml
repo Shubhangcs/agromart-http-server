@@ -67,7 +67,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.VM_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           cat >> ~/.ssh/config << 'EOF'
           Host *
@@ -90,7 +90,7 @@ jobs:
           ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
           mkdir -p /root/agromart
           ENDSSH
-          printf '%s' "$CA_CERT" | ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" "cat > /root/agromart/ca.pem && chmod 600 /root/agromart/ca.pem"
+          echo "$CA_CERT" | tr -d '\r' | ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" "cat > /root/agromart/ca.pem && chmod 600 /root/agromart/ca.pem"
 
       - name: Deploy with PM2
         run: |
