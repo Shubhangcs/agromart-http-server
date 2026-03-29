@@ -78,45 +78,36 @@ jobs:
       - name: Deploy with PM2
         run: |
           ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
-            set -e
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          set -e
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-            APP_DIR="/root/agromart"
-            mkdir -p "$APP_DIR"
+          APP_DIR="/root/agromart"
+          mkdir -p "$APP_DIR"
 
-            # Stop existing process before replacing the binary
-            pm2 delete agromart-server 2>/dev/null || true
+          pm2 delete agromart-server 2>/dev/null || true
 
-            # Atomically install binary with correct permissions
-            install -m 755 /tmp/agromart-server "$APP_DIR/agromart-server"
-            cp /tmp/ecosystem.config.js "$APP_DIR/ecosystem.config.js"
+          install -m 755 /tmp/agromart-server "$APP_DIR/agromart-server"
+          cp /tmp/ecosystem.config.js "$APP_DIR/ecosystem.config.js"
 
-            # Start fresh
-            cd "$APP_DIR"
-            pm2 start ecosystem.config.js
-            pm2 save
+          cd "$APP_DIR"
+          pm2 start ecosystem.config.js
+          pm2 save
 
-            # Wait for process to settle
-            sleep 5
+          echo "Waiting for process to stabilise..."
+          sleep 15
 
-            echo "=== PM2 Status ==="
-            pm2 status
+          echo "=== PM2 Status ==="
+          pm2 status
 
-            echo "=== App Logs ==="
-            pm2 logs agromart-server --lines 30 --nostream
+          echo "=== App Logs ==="
+          pm2 logs agromart-server --lines 30 --nostream 2>&1 || true
 
-            # Fail CI if process is not online
-            STATUS=$(pm2 jlist | python3 -c "
-            import sys, json
-            procs = json.load(sys.stdin)
-            p = next((x for x in procs if x['name'] == 'agromart-server'), None)
-            print(p['pm2_env']['status'] if p else 'not_found')
-            ")
-            echo "Process status: $STATUS"
-            if [ "$STATUS" != "online" ]; then
-              echo "ERROR: process is not online after deploy"
-              exit 1
-            fi
-            echo "Deployment successful"
+          STATUS=$(pm2 jlist 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);print(next((p['pm2_env']['status'] for p in d if p['name']=='agromart-server'),'not_found'))")
+          echo "Process status: $STATUS"
+          if [ "$STATUS" != "online" ]; then
+            echo "ERROR: process is not online"
+            exit 1
+          fi
+          echo "Deployment successful"
           ENDSSH
