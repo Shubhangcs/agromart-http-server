@@ -63,27 +63,38 @@ jobs:
           EOF
 
       - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VM_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.VM_IP }}" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config << 'EOF'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            IdentityFile ~/.ssh/deploy_key
+          EOF
 
       - name: Upload files to VM
         run: |
-          scp -i ~/.ssh/deploy_key \
+          scp \
             agromart-server \
             ecosystem.config.js \
             "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}:/tmp/"
 
       - name: Write CA certificate on VM
+        env:
+          CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
         run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" \
-            "mkdir -p /root/agromart && echo '${{ secrets.DATABASE_CA_CERT }}' > /root/agromart/ca.pem && chmod 600 /root/agromart/ca.pem"
+          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
+          mkdir -p /root/agromart
+          ENDSSH
+          printf '%s' "$CA_CERT" | ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" "cat > /root/agromart/ca.pem && chmod 600 /root/agromart/ca.pem"
 
       - name: Deploy with PM2
         run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
+          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
           set -e
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
