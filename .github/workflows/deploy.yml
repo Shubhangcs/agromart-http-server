@@ -29,13 +29,14 @@ jobs:
 
       - name: Create PM2 ecosystem config
         run: |
-          cat > ecosystem.config.js << 'ECOSYSTEM'
+          cat > ecosystem.config.js << 'EOF'
           module.exports = {
             apps: [
               {
                 name: "agromart-server",
-                script: "./agromart-server",
+                script: "/root/agromart/agromart-server",
                 interpreter: "none",
+                cwd: "/root/agromart",
                 autorestart: true,
                 watch: false,
                 max_restarts: 10,
@@ -58,23 +59,21 @@ jobs:
               }
             ]
           };
-          ECOSYSTEM
+          EOF
 
-      - name: Set up SSH key
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.VM_IP }}" >> ~/.ssh/known_hosts
 
-      - name: Copy files to VM
+      - name: Upload files to VM
         run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" \
-            "mkdir -p ~/agromart"
           scp -i ~/.ssh/deploy_key \
             agromart-server \
             ecosystem.config.js \
-            "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}:~/agromart/"
+            "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}:/tmp/"
 
       - name: Deploy with PM2
         run: |
@@ -83,25 +82,31 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-            cd ~/agromart
-            chmod +x agromart-server
+            APP_DIR="/root/agromart"
+            mkdir -p "$APP_DIR"
 
-            # Always do a clean stop → start to avoid stale process state
+            # Stop existing process before replacing the binary
             pm2 delete agromart-server 2>/dev/null || true
-            pm2 start ecosystem.config.js
 
+            # Atomically install binary with correct permissions
+            install -m 755 /tmp/agromart-server "$APP_DIR/agromart-server"
+            cp /tmp/ecosystem.config.js "$APP_DIR/ecosystem.config.js"
+
+            # Start fresh
+            cd "$APP_DIR"
+            pm2 start ecosystem.config.js
             pm2 save
 
             # Wait for process to settle
             sleep 5
 
-            echo "--- PM2 Status ---"
+            echo "=== PM2 Status ==="
             pm2 status
 
-            echo "--- App Logs ---"
+            echo "=== App Logs ==="
             pm2 logs agromart-server --lines 30 --nostream
 
-            # Fail CI if the process did not come up online
+            # Fail CI if process is not online
             STATUS=$(pm2 jlist | python3 -c "
             import sys, json
             procs = json.load(sys.stdin)
