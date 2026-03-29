@@ -19,21 +19,20 @@ func Open() (*sql.DB, error) {
 		databaseName     = env.GetString("DATABASE_NAME", "postgres")
 		databasePassword = env.GetString("DATABASE_PASSWORD", "postgres")
 		databaseSSLMode  = env.GetString("DATABASE_SSL_MODE", "disable")
-		databaseSSLCert  = env.GetString("DATABASE_SSL_CERT_PATH", "")
 	)
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
-		databaseHost,
-		databasePort,
-		databaseUser,
-		databaseName,
-		databasePassword,
-		databaseSSLMode,
+
+	db, err := sql.Open(
+		"pgx",
+		fmt.Sprintf(
+			"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
+			databaseHost,
+			databasePort,
+			databaseUser,
+			databaseName,
+			databasePassword,
+			databaseSSLMode,
+		),
 	)
-	if databaseSSLCert != "" {
-		dsn += fmt.Sprintf(" sslrootcert=%s", databaseSSLCert)
-	}
-	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("Open: %w", err)
 	}

@@ -48,8 +48,7 @@ jobs:
                   DATABASE_USER: "${{ secrets.DATABASE_USER }}",
                   DATABASE_NAME: "${{ secrets.DATABASE_NAME }}",
                   DATABASE_PASSWORD: "${{ secrets.DATABASE_PASSWORD }}",
-                  DATABASE_SSL_MODE: "require",
-                  DATABASE_SSL_CERT_PATH: "/root/agromart/ca.pem",
+                  DATABASE_SSL_MODE: "${{ secrets.DATABASE_SSL_MODE }}",
                   JWT_SECRET_KEY: "${{ secrets.JWT_SECRET_KEY }}",
                   JWT_TOKEN_ISSUER: "${{ secrets.JWT_TOKEN_ISSUER }}",
                   ACCESS_KEY: "${{ secrets.ACCESS_KEY }}",
@@ -83,15 +82,6 @@ jobs:
             ecosystem.config.js \
             "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}:/tmp/"
 
-      - name: Write CA certificate on VM
-        env:
-          CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
-        run: |
-          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
-          mkdir -p /root/agromart
-          ENDSSH
-          echo "$CA_CERT" | tr -d '\r' | ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" "cat > /root/agromart/ca.pem && chmod 600 /root/agromart/ca.pem"
-
       - name: Deploy with PM2
         run: |
           ssh "${{ secrets.VM_USER }}@${{ secrets.VM_IP }}" bash << 'ENDSSH'
@@ -100,6 +90,7 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
           APP_DIR="/root/agromart"
+          mkdir -p "$APP_DIR"
 
           pm2 delete agromart-server 2>/dev/null || true
 
@@ -110,7 +101,6 @@ jobs:
           pm2 start ecosystem.config.js
           pm2 save
 
-          echo "Waiting for process to stabilise..."
           sleep 15
 
           echo "=== PM2 Status ==="
