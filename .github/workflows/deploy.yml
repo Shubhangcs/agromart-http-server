@@ -47,6 +47,7 @@ jobs:
                   DATABASE_USER: "${{ secrets.DATABASE_USER }}",
                   DATABASE_NAME: "${{ secrets.DATABASE_NAME }}",
                   DATABASE_PASSWORD: "${{ secrets.DATABASE_PASSWORD }}",
+                  DATABASE_SSL_MODE: "${{ secrets.DATABASE_SSL_MODE }}",
                   JWT_SECRET_KEY: "${{ secrets.JWT_SECRET_KEY }}",
                   JWT_TOKEN_ISSUER: "${{ secrets.JWT_TOKEN_ISSUER }}",
                   ACCESS_KEY: "${{ secrets.ACCESS_KEY }}",
