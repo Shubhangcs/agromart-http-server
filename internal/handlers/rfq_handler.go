@@ -15,14 +15,16 @@ import (
 
 // RFQHandler handles all RFQ-related HTTP requests.
 type RFQHandler struct {
-	rfqStore store.RFQStore
-	logger   *slog.Logger
+	rfqStore      store.RFQStore
+	businessStore store.BusinessStore
+	logger        *slog.Logger
 }
 
-func NewRFQHandler(rfqStore store.RFQStore, logger *slog.Logger) *RFQHandler {
+func NewRFQHandler(rfqStore store.RFQStore, businessStore store.BusinessStore, logger *slog.Logger) *RFQHandler {
 	return &RFQHandler{
-		rfqStore: rfqStore,
-		logger:   logger,
+		businessStore: businessStore,
+		rfqStore:      rfqStore,
+		logger:        logger,
 	}
 }
 
@@ -46,6 +48,10 @@ func (rh *RFQHandler) HandleCreateRFQ(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := validator.Validate(&req); err != nil {
 		utils.BadRequest(w, rh.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, rh.businessStore, req.BusinessID) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 	rfq := &models.RFQ{
@@ -85,6 +91,10 @@ func (rh *RFQHandler) HandleActivateRFQ(w http.ResponseWriter, r *http.Request) 
 		utils.BadRequest(w, rh.logger, err.Error(), err)
 		return
 	}
+	if !rh.ownsRFQ(r, id) {
+		forbidden(w, msgNotYourRFQ)
+		return
+	}
 	var req models.ActivateRFQRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, rh.logger, "invalid request payload", err)
@@ -119,6 +129,10 @@ func (rh *RFQHandler) HandleUpdateRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, rh.logger, err.Error(), err)
+		return
+	}
+	if !rh.ownsRFQ(r, id) {
+		forbidden(w, msgNotYourRFQ)
 		return
 	}
 	var req models.UpdateRFQRequest
@@ -165,6 +179,10 @@ func (rh *RFQHandler) HandleDeleteRFQ(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, rh.logger, err.Error(), err)
+		return
+	}
+	if !rh.ownsRFQ(r, id) {
+		forbidden(w, msgNotYourRFQ)
 		return
 	}
 	if err = rh.rfqStore.DeleteRFQ(id); err != nil {
@@ -267,4 +285,12 @@ func (rh *RFQHandler) HandleGetRFQByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq fetched successfully", "rfq": res})
+}
+
+func (rh *RFQHandler) ownsRFQ(r *http.Request, rfqID string) bool {
+	bizID, err := rh.rfqStore.GetRFQBusinessID(rfqID)
+	if err != nil {
+		return claimsFromCtx(r).IsAdmin()
+	}
+	return callerOwnsBusiness(r, rh.businessStore, bizID)
 }

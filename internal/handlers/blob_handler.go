@@ -22,16 +22,20 @@ type PresignedURLResponse struct {
 }
 
 type BlobHandler struct {
-	blobStore store.BlobStore
-	logger    *slog.Logger
-	blob      *blob.AWSS3
+	blobStore     store.BlobStore
+	productStore  store.ProductStore
+	businessStore store.BusinessStore
+	logger        *slog.Logger
+	blob          *blob.AWSS3
 }
 
-func NewBlobHandler(logger *slog.Logger, blob *blob.AWSS3, blobStore store.BlobStore) *BlobHandler {
+func NewBlobHandler(logger *slog.Logger, blob *blob.AWSS3, blobStore store.BlobStore, productStore store.ProductStore, businessStore store.BusinessStore) *BlobHandler {
 	return &BlobHandler{
-		blobStore: blobStore,
-		logger:    logger,
-		blob:      blob,
+		businessStore: businessStore,
+		productStore:  productStore,
+		blobStore:     blobStore,
+		logger:        logger,
+		blob:          blob,
 	}
 }
 
@@ -116,6 +120,10 @@ func (bh *BlobHandler) HandleUpdateBusinessProfileImage(w http.ResponseWriter, r
 	var time = time.Now().Unix()
 	if err != nil {
 		utils.BadRequest(w, bh.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, bh.businessStore, businessId) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 
@@ -258,6 +266,10 @@ func (bh *BlobHandler) HandleUpdateProductImage(w http.ResponseWriter, r *http.R
 		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
+	if !bh.ownsProduct(r, req.ProductID) {
+		forbidden(w, msgNotYourProduct)
+		return
+	}
 
 	var id = uuid.NewString()
 	productImage := &models.ProductImage{
@@ -307,6 +319,10 @@ func (bh *BlobHandler) HandleDeleteProductImage(w http.ResponseWriter, r *http.R
 		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
+	if !bh.ownsProduct(r, req.ProductID) {
+		forbidden(w, msgNotYourProduct)
+		return
+	}
 
 	err = bh.blob.DeleteImage(fmt.Sprintf("products/%s/%s.png", req.ProductID, req.ID))
 	if err != nil {
@@ -321,4 +337,12 @@ func (bh *BlobHandler) HandleDeleteProductImage(w http.ResponseWriter, r *http.R
 	}
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product image deleted successfully"})
+}
+
+func (bh *BlobHandler) ownsProduct(r *http.Request, productID string) bool {
+	bizID, err := bh.productStore.GetProductBusinessID(productID)
+	if err != nil {
+		return claimsFromCtx(r).IsAdmin()
+	}
+	return callerOwnsBusiness(r, bh.businessStore, bizID)
 }

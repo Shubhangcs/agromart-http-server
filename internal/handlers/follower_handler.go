@@ -34,6 +34,7 @@ func (fh *FollowerHandler) HandleCreateFollower(w http.ResponseWriter, r *http.R
 		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
+	req.UserID = claimsFromCtx(r).UserID // never trust a user_id from the client
 	if err := fh.followerStore.CreateFollower(&models.Follower{
 		UserID:     req.UserID,
 		BusinessID: req.BusinessID,
@@ -66,6 +67,7 @@ func (fh *FollowerHandler) HandleRemoveFollower(w http.ResponseWriter, r *http.R
 		utils.BadRequest(w, fh.logger, err.Error(), err)
 		return
 	}
+	req.UserID = claimsFromCtx(r).UserID // never trust a user_id from the client
 	if err := fh.followerStore.RemoveFollower(&models.Follower{
 		UserID:     req.UserID,
 		BusinessID: req.BusinessID,

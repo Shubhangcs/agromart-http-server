@@ -19,6 +19,7 @@ type RFQStore interface {
 	GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQResponse, error)
 	GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQResponse, error)
 	GetRFQByID(id string) (*models.RFQResponse, error)
+	GetRFQBusinessID(rfqID string) (string, error)
 }
 
 func NewPostgresRFQStore(db *sql.DB) *PostgresRFQStore {
@@ -213,4 +214,11 @@ func (rs *PostgresRFQStore) GetRFQByID(id string) (*models.RFQResponse, error) {
 		return nil, err
 	}
 	return &rfq, nil
+}
+
+// GetRFQBusinessID returns the business that owns an RFQ (sql.ErrNoRows if missing).
+func (rs *PostgresRFQStore) GetRFQBusinessID(rfqID string) (string, error) {
+	var businessID string
+	err := rs.db.QueryRow(`SELECT business_id FROM rfqs WHERE id = $1`, rfqID).Scan(&businessID)
+	return businessID, err
 }

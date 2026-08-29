@@ -46,6 +46,10 @@ func (lh *LeadHandler) HandleCreateLead(w http.ResponseWriter, r *http.Request) 
 		utils.BadRequest(w, lh.logger, err.Error(), err)
 		return
 	}
+	if !callerOwnsBusiness(r, lh.businessStore, req.EnquirerBusinessID) {
+		forbidden(w, msgNotYourBusiness)
+		return
+	}
 	if req.EnquirerBusinessID == req.EnquireToID {
 		utils.BadRequest(w, lh.logger, "cannot enquire about your own product", nil)
 		return
@@ -91,6 +95,10 @@ func (lh *LeadHandler) HandleGetSentLeads(w http.ResponseWriter, r *http.Request
 		utils.BadRequest(w, lh.logger, err.Error(), err)
 		return
 	}
+	if !callerOwnsBusiness(r, lh.businessStore, businessID) {
+		forbidden(w, msgNotYourBusiness)
+		return
+	}
 
 	pg := utils.ReadPaginationParams(r)
 	leads, err := lh.leadStore.GetSentLeads(businessID, pg.Limit, pg.Offset())
@@ -124,6 +132,10 @@ func (lh *LeadHandler) HandleGetReceivedLeads(w http.ResponseWriter, r *http.Req
 	businessID, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, lh.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, lh.businessStore, businessID) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 

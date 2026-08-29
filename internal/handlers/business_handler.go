@@ -182,6 +182,10 @@ func (bh *BusinessHandler) HandleUpdateBusiness(w http.ResponseWriter, r *http.R
 		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
+	if !callerOwnsBusiness(r, bh.businessStore, id) {
+		forbidden(w, msgNotYourBusiness)
+		return
+	}
 	var req models.UpdateBusinessRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, bh.logger, "invalid request payload", err)
@@ -227,6 +231,10 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return
 	}
+	if !callerOwnsBusiness(r, bh.businessStore, id) {
+		forbidden(w, msgNotYourBusiness)
+		return
+	}
 	var req models.CreateSocialRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, bh.logger, "invalid request payload", err)
@@ -270,6 +278,10 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, bh.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, bh.businessStore, id) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 	var req models.CreateLegalRequest
@@ -655,6 +667,10 @@ func (bh *BusinessHandler) HandleDeleteBusiness(w http.ResponseWriter, r *http.R
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, bh.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, bh.businessStore, id) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 	if err = bh.businessStore.DeleteBusiness(id); err != nil {

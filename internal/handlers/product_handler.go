@@ -15,14 +15,16 @@ import (
 
 // ProductHandler handles all product-related HTTP requests.
 type ProductHandler struct {
-	productStore store.ProductStore
-	logger       *slog.Logger
+	productStore  store.ProductStore
+	businessStore store.BusinessStore
+	logger        *slog.Logger
 }
 
-func NewProductHandler(productStore store.ProductStore, logger *slog.Logger) *ProductHandler {
+func NewProductHandler(productStore store.ProductStore, businessStore store.BusinessStore, logger *slog.Logger) *ProductHandler {
 	return &ProductHandler{
-		productStore: productStore,
-		logger:       logger,
+		businessStore: businessStore,
+		productStore:  productStore,
+		logger:        logger,
 	}
 }
 
@@ -46,6 +48,10 @@ func (ph *ProductHandler) HandleCreateProduct(w http.ResponseWriter, r *http.Req
 	}
 	if err := validator.Validate(&req); err != nil {
 		utils.BadRequest(w, ph.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, ph.businessStore, req.BusinessID) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 	product := &models.Product{
@@ -85,6 +91,10 @@ func (ph *ProductHandler) HandleUpdateProduct(w http.ResponseWriter, r *http.Req
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ph.logger, err.Error(), err)
+		return
+	}
+	if !ph.ownsProduct(r, id) {
+		forbidden(w, msgNotYourProduct)
 		return
 	}
 	var req models.UpdateProductRequest
@@ -133,6 +143,10 @@ func (ph *ProductHandler) HandleDeleteProduct(w http.ResponseWriter, r *http.Req
 	id, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ph.logger, err.Error(), err)
+		return
+	}
+	if !ph.ownsProduct(r, id) {
+		forbidden(w, msgNotYourProduct)
 		return
 	}
 	if err = ph.productStore.DeleteProduct(id); err != nil {
@@ -355,6 +369,10 @@ func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWrite
 		utils.BadRequest(w, ph.logger, err.Error(), err)
 		return
 	}
+	if !ph.ownsProduct(r, id) {
+		forbidden(w, msgNotYourProduct)
+		return
+	}
 	var req models.ChangeProductStatusRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, ph.logger, "invalid request payload", err)
@@ -372,4 +390,13 @@ func (ph *ProductHandler) HandleChangeProductActivateStatus(w http.ResponseWrite
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "product status updated successfully"})
+}
+
+// ownsProduct checks the caller may manage the product (owner business or admin).
+func (ph *ProductHandler) ownsProduct(r *http.Request, productID string) bool {
+	bizID, err := ph.productStore.GetProductBusinessID(productID)
+	if err != nil {
+		return claimsFromCtx(r).IsAdmin() // admins fall through to the handler's 404; others are refused
+	}
+	return callerOwnsBusiness(r, ph.businessStore, bizID)
 }

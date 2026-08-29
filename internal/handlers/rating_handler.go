@@ -48,6 +48,7 @@ func (h *RatingHandler) HandleRateProduct(w http.ResponseWriter, r *http.Request
 		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
+	req.UserID = claimsFromCtx(r).UserID // never trust a user_id from the client
 	rating := &models.ProductRating{
 		ProductID: req.ProductID,
 		UserID:    req.UserID,
@@ -174,6 +175,7 @@ func (h *RatingHandler) HandleRateBusiness(w http.ResponseWriter, r *http.Reques
 		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
+	req.UserID = claimsFromCtx(r).UserID // never trust a user_id from the client
 	if err := h.ratingStore.RateBusiness(&models.BusinessRating{
 		BusinessID: req.BusinessID,
 		UserID:     req.UserID,

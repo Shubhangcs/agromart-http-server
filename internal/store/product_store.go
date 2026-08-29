@@ -21,6 +21,7 @@ type ProductStore interface {
 	GetFollowersProducts(id string, limit, offset int) ([]models.ProductResponse, error)
 	GetCategoryBasedProducts(id string, filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error)
 	GetSubCategoryBasedProducts(id string, filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error)
+	GetProductBusinessID(productID string) (string, error)
 	GetProductDetailsByID(id string) (*models.ProductDetailsResponse, error)
 }
 
@@ -301,4 +302,11 @@ func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.Produc
 		return nil, err
 	}
 	return &c, nil
+}
+
+// GetProductBusinessID returns the owning business of a product (sql.ErrNoRows if missing).
+func (ps *PostgresProductStore) GetProductBusinessID(productID string) (string, error) {
+	var businessID string
+	err := ps.db.QueryRow(`SELECT business_id FROM products WHERE id = $1`, productID).Scan(&businessID)
+	return businessID, err
 }
