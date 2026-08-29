@@ -35,7 +35,7 @@ func (cs *PostgresChatStore) SaveMessage(m *models.Message) error {
 		Scan(&m.ID, &m.IsRead, &m.CreatedAT)
 }
 
-// GetChatHistory returns the conversation between two users, oldest first,
+// GetChatHistory returns the conversation between two users, newest first (page 1 = latest messages),
 // using LEAST/GREATEST so the query works regardless of sender/receiver order.
 func (cs *PostgresChatStore) GetChatHistory(user1ID, user2ID string, limit, offset int) ([]models.Message, error) {
 	query := `
@@ -43,7 +43,7 @@ func (cs *PostgresChatStore) GetChatHistory(user1ID, user2ID string, limit, offs
 	FROM messages
 	WHERE (sender_id = $1 AND receiver_id = $2)
 	   OR (sender_id = $2 AND receiver_id = $1)
-	ORDER BY created_at ASC
+	ORDER BY created_at DESC
 	LIMIT $3 OFFSET $4
 	`
 	rows, err := cs.db.Query(query, user1ID, user2ID, limit, offset)

@@ -152,6 +152,7 @@ func rfqRoutes(app *app.Application, r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.RFQHandler.HandleCreateRFQ)
 		r.Get("/get/all", app.RFQHandler.HandleGetAllRFQ)
+		r.Get("/get/one/{id}", app.RFQHandler.HandleGetRFQByID)
 		r.Get("/get/{id}", app.RFQHandler.HandleGetRFQByBusinessID)
 		r.Put("/update/{id}", app.RFQHandler.HandleUpdateRFQ)
 		r.Put("/update/status/{id}", app.RFQHandler.HandleActivateRFQ)

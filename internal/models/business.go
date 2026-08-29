@@ -19,6 +19,9 @@ type Business struct {
 	IsBusinessVerified bool      `json:"is_business_verified"`
 	IsBusinessTrusted  bool      `json:"is_business_trusted"`
 	IsBusinessApproved bool      `json:"is_business_approved"`
+	AverageRating      float64   `json:"average_rating"`
+	RatingCount        int       `json:"rating_count"`
+	FollowersCount     int       `json:"followers_count"`
 	CreatedAT          time.Time `json:"created_at"`
 	UpdatedAT          time.Time `json:"updated_at"`
 }

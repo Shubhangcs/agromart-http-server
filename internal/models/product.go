@@ -103,6 +103,8 @@ type ProductResponse struct {
 	MOQ             string          `json:"moq"`
 	IsProductActive bool            `json:"is_product_active"`
 	Images          []ProductImages `json:"product_images,omitempty"`
+	AverageRating   float64         `json:"average_rating"`
+	RatingCount     int             `json:"rating_count"`
 	CreatedAT       time.Time       `json:"created_at"`
 	UpdatedAT       time.Time       `json:"updated_at"`
 }

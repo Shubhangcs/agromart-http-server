@@ -229,6 +229,7 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 		utils.BadRequest(w, bh.logger, "invalid request payload", err)
 		return
 	}
+	req.ID = id // the business id is the path param; clients need not repeat it in the body
 	if err = validator.Validate(&req); err != nil {
 		utils.BadRequest(w, bh.logger, err.Error(), err)
 		return

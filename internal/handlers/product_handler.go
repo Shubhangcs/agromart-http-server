@@ -227,7 +227,8 @@ func (ph *ProductHandler) HandleGetCategoryBasedProducts(w http.ResponseWriter, 
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
-	res, err := ph.productStore.GetCategoryBasedProducts(id, pg.Limit, pg.Offset())
+	filter := utils.ReadProductFilter(r)
+	res, err := ph.productStore.GetCategoryBasedProducts(id, filter, pg.Limit, pg.Offset())
 	if err != nil {
 		utils.ServerError(w, ph.logger, "get category based products", err)
 		return
@@ -259,7 +260,8 @@ func (ph *ProductHandler) HandleGetSubCategoryBasedProducts(w http.ResponseWrite
 		return
 	}
 	pg := utils.ReadPaginationParams(r)
-	res, err := ph.productStore.GetSubCategoryBasedProducts(id, pg.Limit, pg.Offset())
+	filter := utils.ReadProductFilter(r)
+	res, err := ph.productStore.GetSubCategoryBasedProducts(id, filter, pg.Limit, pg.Offset())
 	if err != nil {
 		utils.ServerError(w, ph.logger, "get sub category based products", err)
 		return

@@ -238,3 +238,33 @@ func (rh *RFQHandler) HandleGetRFQByBusinessID(w http.ResponseWriter, r *http.Re
 		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
 	})
 }
+
+// HandleGetRFQByID godoc
+// @Summary      Get a single RFQ
+// @Description  Returns one RFQ (active or inactive) with business and category details
+// @Tags         rfq
+// @Produce      json
+// @Param        id path string true "RFQ ID"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Security     BearerAuth
+// @Router       /rfq/get/one/{id} [get]
+func (rh *RFQHandler) HandleGetRFQByID(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, err.Error(), err)
+		return
+	}
+	res, err := rh.rfqStore.GetRFQByID(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "rfq not found"})
+			return
+		}
+		utils.ServerError(w, rh.logger, "get rfq by id", err)
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "rfq fetched successfully", "rfq": res})
+}
