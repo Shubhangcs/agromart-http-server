@@ -48,7 +48,8 @@ func TestMain(m *testing.M) {
 	set("BUCKET_NAME", "test-bucket")
 	os.Setenv("PUSH_DRY_RUN", "true")
 	os.Setenv("ADMIN_BOOTSTRAP_SECRET", "bootstrap-secret")
-	os.Setenv("AUTH_RATE_LIMIT_PER_MIN", "40")
+	os.Setenv("AUTH_RATE_LIMIT_PER_MIN", "60")
+	os.Setenv("GOOGLE_AUTH_TEST_MODE", "true")
 	os.Unsetenv("RESEND_API_KEY")
 
 	// fresh schema every run
@@ -325,6 +326,53 @@ func TestAPI(t *testing.T) {
 		want(t, call(t, "PUT", "/user/update/details/"+a.sellerID, a.admin, upd), 200, "admin edits seller")
 		want(t, call(t, "GET", "/user/get/all", a.buyer, nil), 403, "user lists users")
 		want(t, call(t, "GET", "/user/get/all", a.admin, nil), 200, "admin lists users")
+	})
+
+	t.Run("15 change password verifies the old one", func(t *testing.T) {
+		want(t, call(t, "PUT", "/user/update/password/"+a.sellerID, a.seller, map[string]any{"old_password": "wrong", "new_password": "Changed1!"}), 401, "wrong old password")
+		want(t, call(t, "PUT", "/user/update/password/"+a.sellerID, a.seller, map[string]any{"old_password": "Passw0rd!", "new_password": "Changed1!"}), 200, "right old password")
+		want(t, call(t, "POST", "/user/login", "", map[string]any{"email": "seller@t.com", "password": "Changed1!"}), 200, "login with changed password")
+		r := want(t, call(t, "GET", "/user/get/user/"+a.sellerID, a.seller, nil), 200, "get user")
+		if str(r.Body["user"].(map[string]any), "auth_provider") != "password" {
+			t.Fatalf("auth_provider missing on user: %v", r.Body)
+		}
+	})
+
+	t.Run("16 google sign-in: new user", func(t *testing.T) {
+		want(t, call(t, "POST", "/user/auth/google", "", map[string]any{"id_token": "garbage"}), 401, "bad token")
+		r := want(t, call(t, "POST", "/user/auth/google", "", map[string]any{"id_token": "test:g-sub-1:newbie@gmail.com:Nina:Rao"}), 200, "new google user")
+		if r.Body["is_new_user"] != true || r.Body["needs_phone"] != true || str(r.Body, "token") == "" {
+			t.Fatalf("unexpected google auth response: %v", r.Body)
+		}
+		tok := str(r.Body, "token")
+		uid := str(claims(tok), "user_id")
+		if m, ok := mailer.LastCaptured("newbie@gmail.com"); !ok || !strings.Contains(m.Subject, "Welcome") {
+			t.Fatalf("welcome email for google user missing")
+		}
+		// password login is refused for a google-only account, with a hint
+		r = want(t, call(t, "POST", "/user/login", "", map[string]any{"email": "newbie@gmail.com", "password": "anything"}), 401, "password login for google account")
+		if str(r.Body, "auth_provider") != "google" {
+			t.Fatalf("expected auth_provider hint, got %v", r.Body)
+		}
+		want(t, call(t, "PUT", "/user/update/password/"+uid, tok, map[string]any{"old_password": "x", "new_password": "Whatever1!"}), 400, "no password to change")
+		want(t, call(t, "POST", "/user/forgot-password", "", map[string]any{"email": "newbie@gmail.com"}), 200, "forgot for google account is a no-op 200")
+		// complete profile: add the phone, then needs_phone flips
+		want(t, call(t, "PUT", "/user/update/details/"+uid, tok, map[string]any{"first_name": "Nina", "last_name": "Rao", "email": "newbie@gmail.com", "phone": "9000000099"}), 200, "add phone")
+		r = want(t, call(t, "POST", "/user/auth/google", "", map[string]any{"id_token": "test:g-sub-1:newbie@gmail.com"}), 200, "second google sign-in")
+		if r.Body["is_new_user"] != false || r.Body["needs_phone"] != false {
+			t.Fatalf("second sign-in should be existing user with phone: %v", r.Body)
+		}
+	})
+
+	t.Run("17 google sign-in links an existing email account", func(t *testing.T) {
+		r := want(t, call(t, "POST", "/user/auth/google", "", map[string]any{"id_token": "test:g-sub-2:buyer@t.com:Buyer"}), 200, "google with existing email")
+		if r.Body["is_new_user"] != false || r.Body["needs_phone"] != false || str(r.Body, "user_id") != a.buyerID {
+			t.Fatalf("expected link to existing buyer: %v", r.Body)
+		}
+		// password login still works after linking
+		want(t, call(t, "POST", "/user/login", "", map[string]any{"email": "buyer@t.com", "password": "NewPassw0rd!"}), 200, "password login still works")
+		// a different google account with the same sub cannot be created twice
+		want(t, call(t, "POST", "/user/auth/google", "", map[string]any{"id_token": "test:g-sub-2:someoneelse@t.com"}), 200, "same sub resolves to the linked account")
 	})
 
 	t.Run("14 auth rate limit", func(t *testing.T) {

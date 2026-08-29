@@ -78,6 +78,11 @@ func (h *PasswordResetHandler) HandleForgotPassword(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if len(user.Password.Hash) == 0 {
+		// Google-only account: nothing to reset. Still 200 so emails cannot be enumerated.
+		utils.WriteJSON(w, http.StatusOK, generic)
+		return
+	}
 	code, err := randomCode()
 	if err != nil {
 		utils.ServerError(w, h.logger, "generate reset code", err)

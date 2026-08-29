@@ -267,7 +267,31 @@ func (uh *UserHandler) HandleUpdateUserPassword(w http.ResponseWriter, r *http.R
 		utils.BadRequest(w, uh.logger, err.Error(), err)
 		return
 	}
-	user := &models.User{ID: userID}
+	user, err := uh.userStore.GetUserAuthByID(userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "user not found"})
+			return
+		}
+		utils.ServerError(w, uh.logger, "update user password", err)
+		return
+	}
+	if len(user.Password.Hash) == 0 {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "this account signs in with Google and has no password", "auth_provider": "google"})
+		return
+	}
+	// Admins may reset without the old password; users must prove they know it.
+	if !claimsFromCtx(r).IsAdmin() {
+		ok, merr := user.Password.Matches(req.OldPassword)
+		if merr != nil {
+			utils.ServerError(w, uh.logger, "verify old password", merr)
+			return
+		}
+		if !ok {
+			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "current password is incorrect"})
+			return
+		}
+	}
 	if err = user.Password.Set(req.NewPassword); err != nil {
 		utils.ServerError(w, uh.logger, "update user password", err)
 		return
