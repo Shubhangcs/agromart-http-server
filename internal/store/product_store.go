@@ -19,8 +19,9 @@ type ProductStore interface {
 	GetAllProducts(filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error)
 	GetBusinessProducts(id string, limit, offset int) ([]models.ProductResponse, error)
 	GetFollowersProducts(id string, limit, offset int) ([]models.ProductResponse, error)
-	GetCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error)
-	GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error)
+	GetCategoryBasedProducts(id string, filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error)
+	GetSubCategoryBasedProducts(id string, filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error)
+	GetProductBusinessID(productID string) (string, error)
 	GetProductDetailsByID(id string) (*models.ProductDetailsResponse, error)
 }
 
@@ -138,7 +139,9 @@ func (ps *PostgresProductStore) GetAllProducts(filter utils.ProductFilter, limit
 	SELECT p.id, p.business_id,
 	       p.category_id, c.name, p.sub_category_id, s.name,
 	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
-	       p.is_product_active, p.created_at, p.updated_at
+	       p.is_product_active, p.created_at, p.updated_at,
+	       COALESCE((SELECT AVG(pr.rating) FROM product_ratings pr WHERE pr.product_id = p.id), 0)::FLOAT8,
+	       (SELECT COUNT(*) FROM product_ratings pr WHERE pr.product_id = p.id)
 	FROM products p
 	JOIN businesses b ON b.id = p.business_id
 	JOIN categories c ON c.id = p.category_id
@@ -158,7 +161,9 @@ func (ps *PostgresProductStore) GetBusinessProducts(id string, limit, offset int
 	SELECT p.id, p.business_id,
 	       p.category_id, c.name, p.sub_category_id, s.name,
 	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
-	       p.is_product_active, p.created_at, p.updated_at
+	       p.is_product_active, p.created_at, p.updated_at,
+	       COALESCE((SELECT AVG(pr.rating) FROM product_ratings pr WHERE pr.product_id = p.id), 0)::FLOAT8,
+	       (SELECT COUNT(*) FROM product_ratings pr WHERE pr.product_id = p.id)
 	FROM products p
 	JOIN categories c ON c.id = p.category_id
 	JOIN sub_categories s ON s.id = p.sub_category_id
@@ -175,7 +180,9 @@ func (ps *PostgresProductStore) GetFollowersProducts(id string, limit, offset in
 	SELECT DISTINCT p.id, p.business_id,
 	       p.category_id, c.name, p.sub_category_id, s.name,
 	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
-	       p.is_product_active, p.created_at, p.updated_at
+	       p.is_product_active, p.created_at, p.updated_at,
+	       COALESCE((SELECT AVG(pr.rating) FROM product_ratings pr WHERE pr.product_id = p.id), 0)::FLOAT8,
+	       (SELECT COUNT(*) FROM product_ratings pr WHERE pr.product_id = p.id)
 	FROM products p
 	JOIN categories c ON c.id = p.category_id
 	JOIN sub_categories s ON s.id = p.sub_category_id
@@ -188,38 +195,50 @@ func (ps *PostgresProductStore) GetFollowersProducts(id string, limit, offset in
 	return ps.scanProductResponses(query, id, limit, offset)
 }
 
-func (ps *PostgresProductStore) GetCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error) {
+func (ps *PostgresProductStore) GetCategoryBasedProducts(id string, filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
 	SELECT p.id, p.business_id,
 	       p.category_id, c.name, p.sub_category_id, s.name,
 	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
-	       p.is_product_active, p.created_at, p.updated_at
+	       p.is_product_active, p.created_at, p.updated_at,
+	       COALESCE((SELECT AVG(pr.rating) FROM product_ratings pr WHERE pr.product_id = p.id), 0)::FLOAT8,
+	       (SELECT COUNT(*) FROM product_ratings pr WHERE pr.product_id = p.id)
 	FROM products p
+	JOIN businesses b ON b.id = p.business_id
 	JOIN categories c ON c.id = p.category_id
 	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.category_id = $1
 	  AND p.is_product_active = TRUE
+	  AND ($2 = '' OR p.name ILIKE '%' || $2 || '%')
+	  AND ($3 = '' OR b.city ILIKE $3)
+	  AND ($4 = '' OR b.state ILIKE $4)
 	ORDER BY p.created_at DESC
-	LIMIT $2 OFFSET $3
+	LIMIT $5 OFFSET $6
 	`
-	return ps.scanProductResponses(query, id, limit, offset)
+	return ps.scanProductResponses(query, id, filter.Name, filter.City, filter.State, limit, offset)
 }
 
-func (ps *PostgresProductStore) GetSubCategoryBasedProducts(id string, limit, offset int) ([]models.ProductResponse, error) {
+func (ps *PostgresProductStore) GetSubCategoryBasedProducts(id string, filter utils.ProductFilter, limit, offset int) ([]models.ProductResponse, error) {
 	query := `
 	SELECT p.id, p.business_id,
 	       p.category_id, c.name, p.sub_category_id, s.name,
 	       p.name, p.description, p.quantity, p.unit, p.price, p.moq,
-	       p.is_product_active, p.created_at, p.updated_at
+	       p.is_product_active, p.created_at, p.updated_at,
+	       COALESCE((SELECT AVG(pr.rating) FROM product_ratings pr WHERE pr.product_id = p.id), 0)::FLOAT8,
+	       (SELECT COUNT(*) FROM product_ratings pr WHERE pr.product_id = p.id)
 	FROM products p
+	JOIN businesses b ON b.id = p.business_id
 	JOIN categories c ON c.id = p.category_id
 	JOIN sub_categories s ON s.id = p.sub_category_id
 	WHERE p.sub_category_id = $1
 	  AND p.is_product_active = TRUE
+	  AND ($2 = '' OR p.name ILIKE '%' || $2 || '%')
+	  AND ($3 = '' OR b.city ILIKE $3)
+	  AND ($4 = '' OR b.state ILIKE $4)
 	ORDER BY p.created_at DESC
-	LIMIT $2 OFFSET $3
+	LIMIT $5 OFFSET $6
 	`
-	return ps.scanProductResponses(query, id, limit, offset)
+	return ps.scanProductResponses(query, id, filter.Name, filter.City, filter.State, limit, offset)
 }
 
 // scanProductResponses scans rows into []models.ProductResponse, fetching images for each product.
@@ -238,6 +257,7 @@ func (ps *PostgresProductStore) scanProductResponses(query string, args ...any) 
 			&p.CategoryID, &p.CategoryName, &p.SubCategoryID, &p.SubCategoryName,
 			&p.Name, &p.Description, &p.Quantity, &p.Unit, &p.Price, &p.MOQ,
 			&p.IsProductActive, &p.CreatedAT, &p.UpdatedAT,
+			&p.AverageRating, &p.RatingCount,
 		)
 		if err != nil {
 			return nil, err
@@ -282,4 +302,11 @@ func (ps *PostgresProductStore) GetProductDetailsByID(id string) (*models.Produc
 		return nil, err
 	}
 	return &c, nil
+}
+
+// GetProductBusinessID returns the owning business of a product (sql.ErrNoRows if missing).
+func (ps *PostgresProductStore) GetProductBusinessID(productID string) (string, error) {
+	var businessID string
+	err := ps.db.QueryRow(`SELECT business_id FROM products WHERE id = $1`, productID).Scan(&businessID)
+	return businessID, err
 }

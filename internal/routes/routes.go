@@ -6,8 +6,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 	_ "github.com/shubhangcs/agromart-server/docs"
 	"github.com/shubhangcs/agromart-server/internal/app"
+	"github.com/shubhangcs/agromart-server/internal/env"
+	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/middlewares"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -22,6 +25,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	r.Use(middlewares.RecoveryMiddleware(app.Logger))
 	r.Use(middlewares.CORSMiddleware)
 	r.Use(middleware.RequestSize(5 << 20))
+	r.Use(httprate.LimitByIP(300, time.Minute)) // general abuse guard
 
 	// Propagate request ID to response headers
 	r.Use(func(next http.Handler) http.Handler {
@@ -39,6 +43,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 		r.Use(middleware.Timeout(30 * time.Second))
 		r.Get("/health", app.HealthCheck)
 		r.Get("/swagger/*", httpSwagger.WrapHandler)
+		r.Get("/app/config", handlers.HandleAppConfig)
 		usersRoutes(app, r)
 		businessRoutes(app, r)
 		categoryRoutes(app, r)
@@ -54,14 +59,19 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 }
 
 func usersRoutes(app *app.Application, r chi.Router) {
-	// Public auth routes
-	r.Post("/admin/create", app.UserHandler.HandleCreateAdmin)
-	r.Post("/user/create", app.UserHandler.HandleCreateUser)
-	r.Post("/admin/login", app.TokenHandler.HandleGetAdminTokenByEmailPassword)
-	r.Post("/user/login", app.TokenHandler.HandleGetUserTokenByEmailPassword)
+	// Public auth routes — tight per-IP limit against credential stuffing / code guessing
+	auth := r.With(httprate.LimitByIP(env.GetInt("AUTH_RATE_LIMIT_PER_MIN", 20), time.Minute))
+	auth.Post("/admin/bootstrap", app.UserHandler.HandleBootstrapAdmin)
+	auth.Post("/user/create", app.UserHandler.HandleCreateUser)
+	auth.Post("/admin/login", app.TokenHandler.HandleGetAdminTokenByEmailPassword)
+	auth.Post("/user/login", app.TokenHandler.HandleGetUserTokenByEmailPassword)
+	auth.Post("/user/forgot-password", app.PasswordResetHandler.HandleForgotPassword)
+	auth.Post("/user/reset-password", app.PasswordResetHandler.HandleResetPassword)
 
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
+		r.Use(middlewares.AdminOnly)
+		r.Post("/create", app.UserHandler.HandleCreateAdmin)
 		r.Get("/get/admin/{id}", app.UserHandler.HandleGetAdminDetailsByID)
 		r.Put("/update/image/{id}", app.BlobHandler.HandleUpdateAdminProfileImage)
 		r.Put("/update/details/{id}", app.UserHandler.HandleUpdateAdminDetails)
@@ -71,13 +81,15 @@ func usersRoutes(app *app.Application, r chi.Router) {
 
 	r.Route("/user", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
-		r.Get("/get/all", app.UserHandler.HandleGetAllUsers)
+		r.With(middlewares.AdminOnly).Get("/get/all", app.UserHandler.HandleGetAllUsers)
 		r.Get("/get/user/{id}", app.UserHandler.HandleGetUserDetailsByID)
-		r.Put("/update/image/{id}", app.BlobHandler.HandleUpdateUserProfileImage)
-		r.Put("/update/details/{id}", app.UserHandler.HandleUpdateUserDetails)
-		r.Put("/update/password/{id}", app.UserHandler.HandleUpdateUserPassword)
-		r.Put("/block/{id}", app.UserHandler.HandleBlockUser)
-		r.Delete("/delete/{id}", app.UserHandler.HandleDeleteUser)
+		r.Post("/push-token", app.PushHandler.HandleRegisterPushToken)
+		r.Delete("/push-token", app.PushHandler.HandleUnregisterPushToken)
+		r.With(middlewares.SelfOrAdmin).Put("/update/image/{id}", app.BlobHandler.HandleUpdateUserProfileImage)
+		r.With(middlewares.SelfOrAdmin).Put("/update/details/{id}", app.UserHandler.HandleUpdateUserDetails)
+		r.With(middlewares.SelfOrAdmin).Put("/update/password/{id}", app.UserHandler.HandleUpdateUserPassword)
+		r.With(middlewares.AdminOnly).Put("/block/{id}", app.UserHandler.HandleBlockUser)
+		r.With(middlewares.SelfOrAdmin).Delete("/delete/{id}", app.UserHandler.HandleDeleteUser)
 	})
 }
 
@@ -103,11 +115,11 @@ func businessRoutes(app *app.Application, r chi.Router) {
 		r.Put("/legal/update/{id}", app.BusinessHandler.HandleUpdateLegals)
 		r.Post("/application/create", app.BusinessHandler.HandleCreateBusinessApplication)
 		r.Get("/application/get/{id}", app.BusinessHandler.HandleGetBusinessApplicationDetails)
-		r.Put("/application/accept/{id}", app.BusinessHandler.HandleAcceptBusinessApplication)
-		r.Put("/application/reject/{id}", app.BusinessHandler.HandleRejectBusinessApplication)
-		r.Put("/status/verify/{id}", app.BusinessHandler.HandleUpdateVerifyBusinessStatus)
-		r.Put("/status/trust/{id}", app.BusinessHandler.HandleUpdateTrustBusinessStatus)
-		r.Put("/status/block/{id}", app.BusinessHandler.HandleUpdateBlockBusinessStatus)
+		r.With(middlewares.AdminOnly).Put("/application/accept/{id}", app.BusinessHandler.HandleAcceptBusinessApplication)
+		r.With(middlewares.AdminOnly).Put("/application/reject/{id}", app.BusinessHandler.HandleRejectBusinessApplication)
+		r.With(middlewares.AdminOnly).Put("/status/verify/{id}", app.BusinessHandler.HandleUpdateVerifyBusinessStatus)
+		r.With(middlewares.AdminOnly).Put("/status/trust/{id}", app.BusinessHandler.HandleUpdateTrustBusinessStatus)
+		r.With(middlewares.AdminOnly).Put("/status/block/{id}", app.BusinessHandler.HandleUpdateBlockBusinessStatus)
 		r.Get("/status/{id}", app.BusinessHandler.HandleIsBusinessApproved)
 		r.Post("/review/create", app.ReviewHandler.HandleCreateBusinessReview)
 		r.Put("/review/update/{id}", app.ReviewHandler.HandleUpdateBusinessReview)
@@ -119,19 +131,19 @@ func businessRoutes(app *app.Application, r chi.Router) {
 func categoryRoutes(app *app.Application, r chi.Router) {
 	r.Route("/category", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
-		r.Post("/create", app.CategoryHandler.HandleCreateCategory)
-		r.Post("/sub/create", app.CategoryHandler.HandleCreateSubCategory)
+		r.With(middlewares.AdminOnly).Post("/create", app.CategoryHandler.HandleCreateCategory)
+		r.With(middlewares.AdminOnly).Post("/sub/create", app.CategoryHandler.HandleCreateSubCategory)
 		r.Get("/get/all", app.CategoryHandler.HandleGetAllCategories)
 		r.Get("/get/{id}", app.CategoryHandler.HandleGetCategoryByID)
-		r.Put("/update/{id}", app.CategoryHandler.HandleUpdateCategory)
-		r.Put("/update/image/{id}", app.BlobHandler.HandleUpdateCategoryImage)
-		r.Delete("/delete/{id}", app.CategoryHandler.HandleDeleteCategory)
+		r.With(middlewares.AdminOnly).Put("/update/{id}", app.CategoryHandler.HandleUpdateCategory)
+		r.With(middlewares.AdminOnly).Put("/update/image/{id}", app.BlobHandler.HandleUpdateCategoryImage)
+		r.With(middlewares.AdminOnly).Delete("/delete/{id}", app.CategoryHandler.HandleDeleteCategory)
 		r.Get("/sub/get/all", app.CategoryHandler.HandleGetAllSubCategories)
 		r.Get("/sub/get/category/{id}", app.CategoryHandler.HandleGetSubCategoriesByCategoryID)
 		r.Get("/sub/get/{id}", app.CategoryHandler.HandleGetSubCategoryByID)
-		r.Put("/sub/update/{id}", app.CategoryHandler.HandleUpdateSubCategory)
-		r.Put("/sub/update/image/{id}", app.BlobHandler.HandleUpdateSubCategoryImage)
-		r.Delete("/sub/delete/{id}", app.CategoryHandler.HandleDeleteSubCategory)
+		r.With(middlewares.AdminOnly).Put("/sub/update/{id}", app.CategoryHandler.HandleUpdateSubCategory)
+		r.With(middlewares.AdminOnly).Put("/sub/update/image/{id}", app.BlobHandler.HandleUpdateSubCategoryImage)
+		r.With(middlewares.AdminOnly).Delete("/sub/delete/{id}", app.CategoryHandler.HandleDeleteSubCategory)
 	})
 }
 
@@ -152,6 +164,7 @@ func rfqRoutes(app *app.Application, r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.RFQHandler.HandleCreateRFQ)
 		r.Get("/get/all", app.RFQHandler.HandleGetAllRFQ)
+		r.Get("/get/one/{id}", app.RFQHandler.HandleGetRFQByID)
 		r.Get("/get/{id}", app.RFQHandler.HandleGetRFQByBusinessID)
 		r.Put("/update/{id}", app.RFQHandler.HandleUpdateRFQ)
 		r.Put("/update/status/{id}", app.RFQHandler.HandleActivateRFQ)
@@ -196,6 +209,16 @@ func wishlistRoutes(app *app.Application, r chi.Router) {
 }
 
 func leadRoutes(app *app.Application, r chi.Router) {
+	r.Route("/banners", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+		r.Get("/get/active", app.BannerHandler.HandleGetActiveBanners)
+		r.With(middlewares.AdminOnly).Get("/get/all", app.BannerHandler.HandleGetAllBanners)
+		r.With(middlewares.AdminOnly).Post("/create", app.BannerHandler.HandleCreateBanner)
+		r.With(middlewares.AdminOnly).Put("/update/{id}", app.BannerHandler.HandleUpdateBanner)
+		r.With(middlewares.AdminOnly).Put("/update/image/{id}", app.BannerHandler.HandleUpdateBannerImage)
+		r.With(middlewares.AdminOnly).Delete("/delete/{id}", app.BannerHandler.HandleDeleteBanner)
+	})
+
 	r.Route("/leads", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.LeadHandler.HandleCreateLead)

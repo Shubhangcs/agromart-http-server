@@ -6,18 +6,21 @@ import (
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
+	"github.com/shubhangcs/agromart-server/internal/push"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 	"github.com/shubhangcs/agromart-server/internal/validator"
 )
 
 type LeadHandler struct {
-	leadStore store.LeadStore
-	logger    *slog.Logger
+	leadStore     store.LeadStore
+	businessStore store.BusinessStore
+	notifier      push.Notifier
+	logger        *slog.Logger
 }
 
-func NewLeadHandler(leadStore store.LeadStore, logger *slog.Logger) *LeadHandler {
-	return &LeadHandler{leadStore: leadStore, logger: logger}
+func NewLeadHandler(leadStore store.LeadStore, businessStore store.BusinessStore, notifier push.Notifier, logger *slog.Logger) *LeadHandler {
+	return &LeadHandler{leadStore: leadStore, businessStore: businessStore, notifier: notifier, logger: logger}
 }
 
 // HandleCreateLead godoc
@@ -43,6 +46,10 @@ func (lh *LeadHandler) HandleCreateLead(w http.ResponseWriter, r *http.Request) 
 		utils.BadRequest(w, lh.logger, err.Error(), err)
 		return
 	}
+	if !callerOwnsBusiness(r, lh.businessStore, req.EnquirerBusinessID) {
+		forbidden(w, msgNotYourBusiness)
+		return
+	}
 	if req.EnquirerBusinessID == req.EnquireToID {
 		utils.BadRequest(w, lh.logger, "cannot enquire about your own product", nil)
 		return
@@ -61,6 +68,7 @@ func (lh *LeadHandler) HandleCreateLead(w http.ResponseWriter, r *http.Request) 
 		utils.ServerError(w, lh.logger, "create lead", err)
 		return
 	}
+	lh.notifySeller(lead)
 
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{
 		"message": "enquiry submitted successfully",
@@ -85,6 +93,10 @@ func (lh *LeadHandler) HandleGetSentLeads(w http.ResponseWriter, r *http.Request
 	businessID, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, lh.logger, err.Error(), err)
+		return
+	}
+	if !callerOwnsBusiness(r, lh.businessStore, businessID) {
+		forbidden(w, msgNotYourBusiness)
 		return
 	}
 
@@ -122,6 +134,10 @@ func (lh *LeadHandler) HandleGetReceivedLeads(w http.ResponseWriter, r *http.Req
 		utils.BadRequest(w, lh.logger, err.Error(), err)
 		return
 	}
+	if !callerOwnsBusiness(r, lh.businessStore, businessID) {
+		forbidden(w, msgNotYourBusiness)
+		return
+	}
 
 	pg := utils.ReadPaginationParams(r)
 	leads, err := lh.leadStore.GetReceivedLeads(businessID, pg.Limit, pg.Offset())
@@ -136,4 +152,20 @@ func (lh *LeadHandler) HandleGetReceivedLeads(w http.ResponseWriter, r *http.Req
 		"leads":      leads,
 		"pagination": map[string]int{"page": pg.Page, "limit": pg.Limit},
 	})
+}
+
+// notifySeller pushes "new enquiry" to the owner of the business that was enquired.
+func (lh *LeadHandler) notifySeller(lead *models.Lead) {
+	if lh.notifier == nil || lh.businessStore == nil {
+		return
+	}
+	ownerID, err := lh.businessStore.GetBusinessOwnerUserID(lead.EnquireToID)
+	if err != nil {
+		return
+	}
+	from := "A buyer"
+	if b, err := lh.businessStore.GetBusiness(lead.EnquirerBusinessID); err == nil && b.Name != "" {
+		from = b.Name
+	}
+	lh.notifier.Notify(ownerID, "New enquiry", from+" sent an enquiry about your product", map[string]string{"type": "lead", "lead_id": lead.LeadID})
 }

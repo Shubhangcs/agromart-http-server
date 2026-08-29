@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 
+	"github.com/shubhangcs/agromart-server/internal/env"
+	"github.com/shubhangcs/agromart-server/internal/mailer"
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
@@ -25,11 +28,12 @@ type MessageResponse struct {
 
 type UserHandler struct {
 	userStore store.UserStore
+	mailer    mailer.Mailer
 	logger    *slog.Logger
 }
 
-func NewUserHandler(userStore store.UserStore, logger *slog.Logger) *UserHandler {
-	return &UserHandler{userStore: userStore, logger: logger}
+func NewUserHandler(userStore store.UserStore, m mailer.Mailer, logger *slog.Logger) *UserHandler {
+	return &UserHandler{userStore: userStore, mailer: m, logger: logger}
 }
 
 // HandleCreateAdmin godoc
@@ -107,6 +111,7 @@ func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create user"})
 		return
 	}
+	mailer.SendWelcome(uh.mailer, uh.logger, user.Email, user.FirstName)
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "user created successfully", "user_id": user.ID})
 }
 
@@ -449,4 +454,33 @@ func (uh *UserHandler) HandleGetAdminDetailsByID(w http.ResponseWriter, r *http.
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "admin details fetched successfully", "admin": admin})
+}
+
+// HandleBootstrapAdmin godoc
+// @Summary      Create the first admin (only while no admin exists)
+// @Description  Requires header X-Bootstrap-Secret matching ADMIN_BOOTSTRAP_SECRET. Once any admin exists this endpoint always returns 403; further admins are created by admins via POST /admin/create.
+// @Tags         admins
+// @Accept       json
+// @Produce      json
+// @Param        X-Bootstrap-Secret header string true "Bootstrap secret"
+// @Param        body body models.CreateAdminRequest true "Admin payload"
+// @Success      201 {object} map[string]interface{}
+// @Failure      403 {object} ErrorResponse
+// @Router       /admin/bootstrap [post]
+func (uh *UserHandler) HandleBootstrapAdmin(w http.ResponseWriter, r *http.Request) {
+	secret := env.GetString("ADMIN_BOOTSTRAP_SECRET", "")
+	if secret == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Bootstrap-Secret")), []byte(secret)) != 1 {
+		utils.WriteJSON(w, http.StatusForbidden, utils.Envelope{"error": "bootstrap not allowed"})
+		return
+	}
+	exists, err := uh.userStore.AdminExists()
+	if err != nil {
+		utils.ServerError(w, uh.logger, "bootstrap admin", err)
+		return
+	}
+	if exists {
+		utils.WriteJSON(w, http.StatusForbidden, utils.Envelope{"error": "an admin already exists; sign in as admin to add more"})
+		return
+	}
+	uh.HandleCreateAdmin(w, r)
 }

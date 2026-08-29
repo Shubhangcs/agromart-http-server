@@ -50,6 +50,7 @@ func (h *ReviewHandler) HandleCreateBusinessReview(w http.ResponseWriter, r *htt
 		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
+	req.UserID = claimsFromCtx(r).UserID // never trust a user_id from the client
 	rev := &models.BusinessReview{
 		BusinessID: req.BusinessID,
 		UserID:     req.UserID,
@@ -190,6 +191,7 @@ func (h *ReviewHandler) HandleCreateProductReview(w http.ResponseWriter, r *http
 		utils.BadRequest(w, h.logger, err.Error(), err)
 		return
 	}
+	req.UserID = claimsFromCtx(r).UserID // never trust a user_id from the client
 	rev := &models.ProductReview{
 		ProductID: req.ProductID,
 		UserID:    req.UserID,

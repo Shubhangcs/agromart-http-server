@@ -14,29 +14,34 @@ import (
 	"github.com/shubhangcs/agromart-server/internal/env"
 	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/hub"
+	"github.com/shubhangcs/agromart-server/internal/mailer"
+	"github.com/shubhangcs/agromart-server/internal/push"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 	"github.com/shubhangcs/agromart-server/migrations"
 )
 
 type Application struct {
-	Logger          *slog.Logger
-	DB              *sql.DB
-	Blob            *blob.AWSS3
-	Hub             *hub.Hub
-	UserHandler     *handlers.UserHandler
-	BlobHandler     *handlers.BlobHandler
-	TokenHandler    *handlers.TokenHandler
-	BusinessHandler *handlers.BusinessHandler
-	CategoryHandler *handlers.CategoryHandler
-	FollowHandler   *handlers.FollowerHandler
-	RFQHandler      *handlers.RFQHandler
-	ProductHandler  *handlers.ProductHandler
-	RatingHandler   *handlers.RatingHandler
-	ReviewHandler   *handlers.ReviewHandler
-	ChatHandler     *handlers.ChatHandler
-	WishlistHandler *handlers.WishlistHandler
-	LeadHandler     *handlers.LeadHandler
+	Logger               *slog.Logger
+	DB                   *sql.DB
+	Blob                 *blob.AWSS3
+	Hub                  *hub.Hub
+	UserHandler          *handlers.UserHandler
+	BlobHandler          *handlers.BlobHandler
+	TokenHandler         *handlers.TokenHandler
+	BusinessHandler      *handlers.BusinessHandler
+	CategoryHandler      *handlers.CategoryHandler
+	FollowHandler        *handlers.FollowerHandler
+	RFQHandler           *handlers.RFQHandler
+	ProductHandler       *handlers.ProductHandler
+	RatingHandler        *handlers.RatingHandler
+	ReviewHandler        *handlers.ReviewHandler
+	ChatHandler          *handlers.ChatHandler
+	WishlistHandler      *handlers.WishlistHandler
+	LeadHandler          *handlers.LeadHandler
+	PasswordResetHandler *handlers.PasswordResetHandler
+	PushHandler          *handlers.PushHandler
+	BannerHandler        *handlers.BannerHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -104,42 +109,53 @@ func NewApplication() (*Application, error) {
 	chatStore := store.NewPostgresChatStore(pgdb)
 	wishlistStore := store.NewPostgresWishlistStore(pgdb)
 	leadStore := store.NewPostgresLeadStore(pgdb)
+	resetStore := store.NewPostgresPasswordResetStore(pgdb)
+	pushStore := store.NewPostgresPushStore(pgdb)
+	bannerStore := store.NewPostgresBannerStore(pgdb)
+	notifier := push.NewExpoNotifier(pushStore, logger)
+	mail := mailer.New(logger)
 
 	// Handlers
-	userHandler := handlers.NewUserHandler(userStore, logger)
+	userHandler := handlers.NewUserHandler(userStore, mail, logger)
 	tokenHandler := handlers.NewTokenHandler(userStore, businessStore, logger)
-	blobHandler := handlers.NewBlobHandler(logger, as3, blobStore)
-	businessHandler := handlers.NewBusinessHandler(businessStore, logger)
+	blobHandler := handlers.NewBlobHandler(logger, as3, blobStore, productStore, businessStore)
+	businessHandler := handlers.NewBusinessHandler(businessStore, notifier, logger)
 	categoryHandler := handlers.NewCategoryHandler(categoryStore, logger)
 	followerHandler := handlers.NewFollowerHandler(followerStore, logger)
-	rfqHandler := handlers.NewRFQHandler(rfqStore, logger)
-	productHandler := handlers.NewProductHandler(productStore, logger)
+	rfqHandler := handlers.NewRFQHandler(rfqStore, businessStore, logger)
+	productHandler := handlers.NewProductHandler(productStore, businessStore, logger)
 	ratingHandler := handlers.NewRatingHandler(ratingStore, logger)
 	reviewHandler := handlers.NewReviewHandler(reviewStore, logger)
 	wsHub := hub.NewHub()
-	chatHandler := handlers.NewChatHandler(chatStore, wsHub, logger)
+	chatHandler := handlers.NewChatHandler(chatStore, wsHub, notifier, logger)
 	wishlistHandler := handlers.NewWishlistHandler(wishlistStore, logger)
-	leadHandler := handlers.NewLeadHandler(leadStore, logger)
+	leadHandler := handlers.NewLeadHandler(leadStore, businessStore, notifier, logger)
+	passwordResetHandler := handlers.NewPasswordResetHandler(userStore, resetStore, mail, logger)
+	pushHandler := handlers.NewPushHandler(pushStore, logger)
+	bannerHandler := handlers.NewBannerHandler(bannerStore, as3, logger)
 
 	// Creating a object of application struct
 	app := &Application{
-		Logger:          logger,
-		DB:              pgdb,
-		Blob:            as3,
-		Hub:             wsHub,
-		UserHandler:     userHandler,
-		TokenHandler:    tokenHandler,
-		BlobHandler:     blobHandler,
-		BusinessHandler: businessHandler,
-		CategoryHandler: categoryHandler,
-		FollowHandler:   followerHandler,
-		RFQHandler:      rfqHandler,
-		ProductHandler:  productHandler,
-		RatingHandler:   ratingHandler,
-		ReviewHandler:   reviewHandler,
-		ChatHandler:     chatHandler,
-		WishlistHandler: wishlistHandler,
-		LeadHandler:     leadHandler,
+		Logger:               logger,
+		DB:                   pgdb,
+		Blob:                 as3,
+		Hub:                  wsHub,
+		UserHandler:          userHandler,
+		TokenHandler:         tokenHandler,
+		BlobHandler:          blobHandler,
+		BusinessHandler:      businessHandler,
+		CategoryHandler:      categoryHandler,
+		FollowHandler:        followerHandler,
+		RFQHandler:           rfqHandler,
+		ProductHandler:       productHandler,
+		RatingHandler:        ratingHandler,
+		ReviewHandler:        reviewHandler,
+		ChatHandler:          chatHandler,
+		WishlistHandler:      wishlistHandler,
+		LeadHandler:          leadHandler,
+		PasswordResetHandler: passwordResetHandler,
+		PushHandler:          pushHandler,
+		BannerHandler:        bannerHandler,
 	}
 
 	return app, nil

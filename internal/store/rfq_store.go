@@ -18,6 +18,8 @@ type RFQStore interface {
 	DeleteRFQ(id string) error
 	GetAllRFQ(filter utils.RFQFilter, limit, offset int) ([]models.RFQResponse, error)
 	GetRFQByBusinessID(id string, limit, offset int) ([]models.RFQResponse, error)
+	GetRFQByID(id string) (*models.RFQResponse, error)
+	GetRFQBusinessID(rfqID string) (string, error)
 }
 
 func NewPostgresRFQStore(db *sql.DB) *PostgresRFQStore {
@@ -149,9 +151,13 @@ func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]
 	query := `
 	SELECT
 		r.id, b.user_id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
+		c.id, c.name, c.description,
+		sc.id, sc.name, sc.description,
 		r.product_name, r.quantity, r.unit, r.price, r.is_rfq_active, r.created_at, r.updated_at
 	FROM rfqs r
 	JOIN businesses b ON b.id = r.business_id
+	JOIN categories c ON c.id = r.category_id
+	JOIN sub_categories sc ON sc.id = r.sub_category_id
 	WHERE r.business_id = $1
 	ORDER BY r.created_at DESC
 	LIMIT $2 OFFSET $3
@@ -168,6 +174,8 @@ func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]
 		err = rows.Scan(
 			&rfq.ID, &rfq.UserID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
 			&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
+			&rfq.CategoryID, &rfq.CategoryName, &rfq.CategoryDescription,
+			&rfq.SubCategoryID, &rfq.SubCategoryName, &rfq.SubCategoryDescription,
 			&rfq.ProductName, &rfq.Quantity, &rfq.Unit, &rfq.Price,
 			&rfq.IsRFQActive, &rfq.CreatedAT, &rfq.UpdatedAT,
 		)
@@ -177,4 +185,40 @@ func (rs *PostgresRFQStore) GetRFQByBusinessID(id string, limit, offset int) ([]
 		rfqs = append(rfqs, rfq)
 	}
 	return rfqs, rows.Err()
+}
+
+// GetRFQByID returns a single RFQ (active or not) with business and category details.
+func (rs *PostgresRFQStore) GetRFQByID(id string) (*models.RFQResponse, error) {
+	query := `
+	SELECT
+		r.id, b.user_id, b.id, b.business_name, b.business_email, b.business_phone, b.address, b.city, b.state,
+		c.id, c.name, c.description,
+		sc.id, sc.name, sc.description,
+		r.product_name, r.quantity, r.unit, r.price, r.is_rfq_active, r.created_at, r.updated_at
+	FROM rfqs r
+	JOIN businesses b ON b.id = r.business_id
+	JOIN categories c ON c.id = r.category_id
+	JOIN sub_categories sc ON sc.id = r.sub_category_id
+	WHERE r.id = $1
+	`
+	var rfq models.RFQResponse
+	err := rs.db.QueryRow(query, id).Scan(
+		&rfq.ID, &rfq.UserID, &rfq.BusinessID, &rfq.BusinessName, &rfq.BusinessEmail,
+		&rfq.BusinessPhone, &rfq.Address, &rfq.City, &rfq.State,
+		&rfq.CategoryID, &rfq.CategoryName, &rfq.CategoryDescription,
+		&rfq.SubCategoryID, &rfq.SubCategoryName, &rfq.SubCategoryDescription,
+		&rfq.ProductName, &rfq.Quantity, &rfq.Unit, &rfq.Price,
+		&rfq.IsRFQActive, &rfq.CreatedAT, &rfq.UpdatedAT,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rfq, nil
+}
+
+// GetRFQBusinessID returns the business that owns an RFQ (sql.ErrNoRows if missing).
+func (rs *PostgresRFQStore) GetRFQBusinessID(rfqID string) (string, error) {
+	var businessID string
+	err := rs.db.QueryRow(`SELECT business_id FROM rfqs WHERE id = $1`, rfqID).Scan(&businessID)
+	return businessID, err
 }

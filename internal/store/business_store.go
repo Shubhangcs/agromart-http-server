@@ -37,6 +37,7 @@ type BusinessStore interface {
 	UpdateTrustBusinessStatus(id string, status bool) error
 	UpdateBlockBusinessStatus(id string, status bool) error
 	GetBusinessIDByUserID(id string) (*string, error)
+	GetBusinessOwnerUserID(businessID string) (string, error)
 	IsBusinessApproved(id string) (bool, error)
 }
 
@@ -376,7 +377,10 @@ func (bs *PostgresBusinessStore) GetBusiness(id string) (*models.Business, error
 	SELECT id, business_profile_image, business_name, business_email, business_phone,
 	       address, city, state, pincode, business_type,
 	       is_business_verified, is_business_approved, is_business_trusted,
-	       created_at, updated_at
+	       created_at, updated_at,
+	       COALESCE((SELECT AVG(r.rating) FROM business_ratings r WHERE r.business_id = businesses.id), 0)::FLOAT8,
+	       (SELECT COUNT(*) FROM business_ratings r WHERE r.business_id = businesses.id),
+	       (SELECT COUNT(*) FROM followers f WHERE f.business_id = businesses.id)
 	FROM businesses
 	WHERE id = $1
 	`
@@ -386,6 +390,7 @@ func (bs *PostgresBusinessStore) GetBusiness(id string) (*models.Business, error
 		&b.Address, &b.City, &b.State, &b.Pincode, &b.BusinessType,
 		&b.IsBusinessVerified, &b.IsBusinessApproved, &b.IsBusinessTrusted,
 		&b.CreatedAT, &b.UpdatedAT,
+		&b.AverageRating, &b.RatingCount, &b.FollowersCount,
 	)
 	if err != nil {
 		return nil, err
@@ -450,6 +455,9 @@ func (bs *PostgresBusinessStore) GetAllBusinesses(limit, offset int) ([]models.B
 		b.business_phone, b.address, b.city, b.state, b.pincode, b.business_type,
 		b.is_business_verified, b.is_business_trusted, b.is_business_approved,
 		b.created_at, b.updated_at,
+		COALESCE((SELECT AVG(r.rating) FROM business_ratings r WHERE r.business_id = b.id), 0)::FLOAT8,
+		(SELECT COUNT(*) FROM business_ratings r WHERE r.business_id = b.id),
+		(SELECT COUNT(*) FROM followers f WHERE f.business_id = b.id),
 		s.business_id, s.linkedin, s.instagram, s.youtube, s.telegram, s.x,
 		s.facebook, s.website, s.created_at, s.updated_at,
 		l.business_id, l.aadhaar, l.pan, l.export_import, l.msme, l.fassi,
@@ -500,6 +508,9 @@ func (bs *PostgresBusinessStore) GetAllBusinesses(limit, offset int) ([]models.B
 			&bd.CoreBusinessDetails.IsBusinessApproved,
 			&bd.CoreBusinessDetails.CreatedAT,
 			&bd.CoreBusinessDetails.UpdatedAT,
+			&bd.CoreBusinessDetails.AverageRating,
+			&bd.CoreBusinessDetails.RatingCount,
+			&bd.CoreBusinessDetails.FollowersCount,
 			&socialID,
 			&bd.BusinessSocialDetails.Linkedin,
 			&bd.BusinessSocialDetails.Instagram,
@@ -636,3 +647,9 @@ func (bs *PostgresBusinessStore) IsBusinessApproved(id string) (bool, error) {
 	return approved, nil
 }
 
+// GetBusinessOwnerUserID returns the user that owns a business (used for notifications).
+func (bs *PostgresBusinessStore) GetBusinessOwnerUserID(businessID string) (string, error) {
+	var userID string
+	err := bs.db.QueryRow(`SELECT user_id FROM businesses WHERE id = $1`, businessID).Scan(&userID)
+	return userID, err
+}
