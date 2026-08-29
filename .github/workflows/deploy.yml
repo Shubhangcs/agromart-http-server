@@ -1,14 +1,55 @@
-name: Deploy to Production
+name: Test and Deploy
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
+  test:
+    name: Vet and test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: agromart_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: API integration tests
+        env:
+          TEST_DATABASE_NAME: agromart_test
+          TEST_DATABASE_HOST: localhost
+          TEST_DATABASE_USER: postgres
+          TEST_DATABASE_PASSWORD: postgres
+        run: go test ./... -count=1
+
   deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code

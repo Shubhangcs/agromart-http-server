@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/shubhangcs/agromart-server/internal/env"
@@ -66,7 +67,33 @@ func (m *resendMailer) Send(ctx context.Context, to, subject, textBody, htmlBody
 
 type logMailer struct{ logger *slog.Logger }
 
+// Captured is the most recent email handled by the log-only mailer (for local inspection and tests).
+type Captured struct{ To, Subject, Text string }
+
+var (
+	captureMu sync.Mutex
+	captured  []Captured
+)
+
+// LastCaptured returns the newest captured email for the address, if any.
+func LastCaptured(to string) (Captured, bool) {
+	captureMu.Lock()
+	defer captureMu.Unlock()
+	for i := len(captured) - 1; i >= 0; i-- {
+		if captured[i].To == to {
+			return captured[i], true
+		}
+	}
+	return Captured{}, false
+}
+
 func (m *logMailer) Send(_ context.Context, to, subject, textBody, _ string) error {
 	m.logger.Info("email (not sent: mailer unconfigured)", "to", to, "subject", subject, "body", textBody)
+	captureMu.Lock()
+	captured = append(captured, Captured{To: to, Subject: subject, Text: textBody})
+	if len(captured) > 50 {
+		captured = captured[len(captured)-50:]
+	}
+	captureMu.Unlock()
 	return nil
 }

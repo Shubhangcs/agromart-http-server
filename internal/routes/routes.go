@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/httprate"
 	_ "github.com/shubhangcs/agromart-server/docs"
 	"github.com/shubhangcs/agromart-server/internal/app"
+	"github.com/shubhangcs/agromart-server/internal/env"
 	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/middlewares"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -59,7 +60,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 
 func usersRoutes(app *app.Application, r chi.Router) {
 	// Public auth routes — tight per-IP limit against credential stuffing / code guessing
-	auth := r.With(httprate.LimitByIP(10, time.Minute))
+	auth := r.With(httprate.LimitByIP(env.GetInt("AUTH_RATE_LIMIT_PER_MIN", 20), time.Minute))
 	auth.Post("/admin/bootstrap", app.UserHandler.HandleBootstrapAdmin)
 	auth.Post("/user/create", app.UserHandler.HandleCreateUser)
 	auth.Post("/admin/login", app.TokenHandler.HandleGetAdminTokenByEmailPassword)
@@ -209,6 +210,7 @@ func wishlistRoutes(app *app.Application, r chi.Router) {
 
 func leadRoutes(app *app.Application, r chi.Router) {
 	r.Route("/banners", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
 		r.Get("/get/active", app.BannerHandler.HandleGetActiveBanners)
 		r.With(middlewares.AdminOnly).Get("/get/all", app.BannerHandler.HandleGetAllBanners)
 		r.With(middlewares.AdminOnly).Post("/create", app.BannerHandler.HandleCreateBanner)

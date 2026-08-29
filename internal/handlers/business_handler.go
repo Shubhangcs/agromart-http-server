@@ -255,6 +255,10 @@ func (bh *BusinessHandler) HandleUpdateSocials(w http.ResponseWriter, r *http.Re
 		Facebook:  req.Facebook,
 		Website:   req.Website,
 	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "no details on file for this business yet; create them first"})
+			return
+		}
 		utils.ServerError(w, bh.logger, "update socials", err)
 		return
 	}
@@ -298,6 +302,10 @@ func (bh *BusinessHandler) HandleUpdateLegals(w http.ResponseWriter, r *http.Req
 		Fassi:        req.Fassi,
 		GST:          req.GST,
 	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSON(w, http.StatusNotFound, utils.Envelope{"error": "no details on file for this business yet; create them first"})
+			return
+		}
 		utils.ServerError(w, bh.logger, "update legals", err)
 		return
 	}
