@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/shubhangcs/agromart-server/internal/hub"
 	"github.com/shubhangcs/agromart-server/internal/models"
+	"github.com/shubhangcs/agromart-server/internal/push"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/tokens"
 	"github.com/shubhangcs/agromart-server/internal/utils"
@@ -34,11 +35,12 @@ type wsIncoming struct {
 type ChatHandler struct {
 	chatStore store.ChatStore
 	hub       *hub.Hub
+	notifier  push.Notifier
 	logger    *slog.Logger
 }
 
-func NewChatHandler(chatStore store.ChatStore, h *hub.Hub, logger *slog.Logger) *ChatHandler {
-	return &ChatHandler{chatStore: chatStore, hub: h, logger: logger}
+func NewChatHandler(chatStore store.ChatStore, h *hub.Hub, notifier push.Notifier, logger *slog.Logger) *ChatHandler {
+	return &ChatHandler{chatStore: chatStore, hub: h, notifier: notifier, logger: logger}
 }
 
 // claimsFromCtx extracts the authenticated user's claims from the request context.
@@ -170,6 +172,7 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 		// Push to receiver if they are online.
 		ch.hub.Deliver(incoming.ReceiverID, payload)
+		ch.notifyOffline(incoming.ReceiverID, userID, incoming.Content)
 
 		// Echo back to sender with the DB-assigned ID and timestamp.
 		select {
@@ -223,6 +226,7 @@ func (ch *ChatHandler) HandleSendMessage(w http.ResponseWriter, r *http.Request)
 	payload, _ := json.Marshal(msg)
 	// Push to receiver if they are online via WebSocket.
 	ch.hub.Deliver(req.ReceiverID, payload)
+	ch.notifyOffline(req.ReceiverID, senderID, req.Content)
 
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "message sent successfully", "data": msg})
 }
@@ -302,4 +306,16 @@ func (ch *ChatHandler) HandleMarkAsRead(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "messages marked as read"})
+}
+
+// notifyOffline sends a push notification when the receiver has no live WebSocket.
+func (ch *ChatHandler) notifyOffline(receiverID, senderID, content string) {
+	if ch.notifier == nil || ch.hub.IsOnline(receiverID) {
+		return
+	}
+	preview := content
+	if len(preview) > 90 {
+		preview = preview[:90] + "…"
+	}
+	ch.notifier.Notify(receiverID, "New message", preview, map[string]string{"type": "chat", "sender_id": senderID})
 }

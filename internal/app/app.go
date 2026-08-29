@@ -15,6 +15,7 @@ import (
 	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/hub"
 	"github.com/shubhangcs/agromart-server/internal/mailer"
+	"github.com/shubhangcs/agromart-server/internal/push"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 	"github.com/shubhangcs/agromart-server/migrations"
@@ -39,6 +40,8 @@ type Application struct {
 	WishlistHandler      *handlers.WishlistHandler
 	LeadHandler          *handlers.LeadHandler
 	PasswordResetHandler *handlers.PasswordResetHandler
+	PushHandler          *handlers.PushHandler
+	BannerHandler        *handlers.BannerHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -107,12 +110,16 @@ func NewApplication() (*Application, error) {
 	wishlistStore := store.NewPostgresWishlistStore(pgdb)
 	leadStore := store.NewPostgresLeadStore(pgdb)
 	resetStore := store.NewPostgresPasswordResetStore(pgdb)
+	pushStore := store.NewPostgresPushStore(pgdb)
+	bannerStore := store.NewPostgresBannerStore(pgdb)
+	notifier := push.NewExpoNotifier(pushStore, logger)
+	mail := mailer.New(logger)
 
 	// Handlers
-	userHandler := handlers.NewUserHandler(userStore, logger)
+	userHandler := handlers.NewUserHandler(userStore, mail, logger)
 	tokenHandler := handlers.NewTokenHandler(userStore, businessStore, logger)
 	blobHandler := handlers.NewBlobHandler(logger, as3, blobStore)
-	businessHandler := handlers.NewBusinessHandler(businessStore, logger)
+	businessHandler := handlers.NewBusinessHandler(businessStore, notifier, logger)
 	categoryHandler := handlers.NewCategoryHandler(categoryStore, logger)
 	followerHandler := handlers.NewFollowerHandler(followerStore, logger)
 	rfqHandler := handlers.NewRFQHandler(rfqStore, logger)
@@ -120,14 +127,12 @@ func NewApplication() (*Application, error) {
 	ratingHandler := handlers.NewRatingHandler(ratingStore, logger)
 	reviewHandler := handlers.NewReviewHandler(reviewStore, logger)
 	wsHub := hub.NewHub()
-	chatHandler := handlers.NewChatHandler(chatStore, wsHub, logger)
+	chatHandler := handlers.NewChatHandler(chatStore, wsHub, notifier, logger)
 	wishlistHandler := handlers.NewWishlistHandler(wishlistStore, logger)
-	leadHandler := handlers.NewLeadHandler(leadStore, logger)
-	mail, err := mailer.New(logger)
-	if err != nil {
-		return nil, err
-	}
+	leadHandler := handlers.NewLeadHandler(leadStore, businessStore, notifier, logger)
 	passwordResetHandler := handlers.NewPasswordResetHandler(userStore, resetStore, mail, logger)
+	pushHandler := handlers.NewPushHandler(pushStore, logger)
+	bannerHandler := handlers.NewBannerHandler(bannerStore, as3, logger)
 
 	// Creating a object of application struct
 	app := &Application{
@@ -149,6 +154,8 @@ func NewApplication() (*Application, error) {
 		WishlistHandler:      wishlistHandler,
 		LeadHandler:          leadHandler,
 		PasswordResetHandler: passwordResetHandler,
+		PushHandler:          pushHandler,
+		BannerHandler:        bannerHandler,
 	}
 
 	return app, nil

@@ -70,7 +70,7 @@ type FollowingListResponse struct {
 
 // RFQListResponse defines a list payload for RFQs
 type RFQListResponse struct {
-	Message string       `json:"message" example:"rfqs fetched successfully"`
+	Message string               `json:"message" example:"rfqs fetched successfully"`
 	RFQs    []models.RFQResponse `json:"rfqs"`
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/shubhangcs/agromart-server/docs"
 	"github.com/shubhangcs/agromart-server/internal/app"
+	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/middlewares"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -39,6 +40,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 		r.Use(middleware.Timeout(30 * time.Second))
 		r.Get("/health", app.HealthCheck)
 		r.Get("/swagger/*", httpSwagger.WrapHandler)
+		r.Get("/app/config", handlers.HandleAppConfig)
 		usersRoutes(app, r)
 		businessRoutes(app, r)
 		categoryRoutes(app, r)
@@ -75,6 +77,8 @@ func usersRoutes(app *app.Application, r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Get("/get/all", app.UserHandler.HandleGetAllUsers)
 		r.Get("/get/user/{id}", app.UserHandler.HandleGetUserDetailsByID)
+		r.Post("/push-token", app.PushHandler.HandleRegisterPushToken)
+		r.Delete("/push-token", app.PushHandler.HandleUnregisterPushToken)
 		r.Put("/update/image/{id}", app.BlobHandler.HandleUpdateUserProfileImage)
 		r.Put("/update/details/{id}", app.UserHandler.HandleUpdateUserDetails)
 		r.Put("/update/password/{id}", app.UserHandler.HandleUpdateUserPassword)
@@ -199,6 +203,15 @@ func wishlistRoutes(app *app.Application, r chi.Router) {
 }
 
 func leadRoutes(app *app.Application, r chi.Router) {
+	r.Route("/banners", func(r chi.Router) {
+		r.Get("/get/active", app.BannerHandler.HandleGetActiveBanners)
+		r.Get("/get/all", app.BannerHandler.HandleGetAllBanners)
+		r.Post("/create", app.BannerHandler.HandleCreateBanner)
+		r.Put("/update/{id}", app.BannerHandler.HandleUpdateBanner)
+		r.Put("/update/image/{id}", app.BannerHandler.HandleUpdateBannerImage)
+		r.Delete("/delete/{id}", app.BannerHandler.HandleDeleteBanner)
+	})
+
 	r.Route("/leads", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 		r.Post("/create", app.LeadHandler.HandleCreateLead)

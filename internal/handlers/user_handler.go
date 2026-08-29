@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/shubhangcs/agromart-server/internal/mailer"
 	"github.com/shubhangcs/agromart-server/internal/models"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
@@ -25,11 +26,12 @@ type MessageResponse struct {
 
 type UserHandler struct {
 	userStore store.UserStore
+	mailer    mailer.Mailer
 	logger    *slog.Logger
 }
 
-func NewUserHandler(userStore store.UserStore, logger *slog.Logger) *UserHandler {
-	return &UserHandler{userStore: userStore, logger: logger}
+func NewUserHandler(userStore store.UserStore, m mailer.Mailer, logger *slog.Logger) *UserHandler {
+	return &UserHandler{userStore: userStore, mailer: m, logger: logger}
 }
 
 // HandleCreateAdmin godoc
@@ -107,6 +109,7 @@ func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create user"})
 		return
 	}
+	mailer.SendWelcome(uh.mailer, uh.logger, user.Email, user.FirstName)
 	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"message": "user created successfully", "user_id": user.ID})
 }
 

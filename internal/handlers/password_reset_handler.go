@@ -93,9 +93,7 @@ func (h *PasswordResetHandler) HandleForgotPassword(w http.ResponseWriter, r *ht
 		return
 	}
 
-	subject := "Your South Canara Agro Mart password reset code"
-	text := fmt.Sprintf("Hi %s,\n\nYour password reset code is %s. It expires in 15 minutes.\n\nIf you did not request this, you can ignore this email.", user.FirstName, code)
-	html := fmt.Sprintf(`<p>Hi %s,</p><p>Your password reset code is:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">%s</p><p>It expires in 15 minutes. If you did not request this, you can ignore this email.</p>`, user.FirstName, code)
+	subject, text, html := mailer.ResetCodeEmail(user.FirstName, code)
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 	if err = h.mailer.Send(ctx, email, subject, text, html); err != nil {

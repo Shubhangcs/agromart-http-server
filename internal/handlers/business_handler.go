@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/shubhangcs/agromart-server/internal/models"
+	"github.com/shubhangcs/agromart-server/internal/push"
 	"github.com/shubhangcs/agromart-server/internal/store"
 	"github.com/shubhangcs/agromart-server/internal/utils"
 	"github.com/shubhangcs/agromart-server/internal/validator"
@@ -16,12 +17,14 @@ import (
 // BusinessHandler handles all business-related HTTP requests.
 type BusinessHandler struct {
 	businessStore store.BusinessStore
+	notifier      push.Notifier
 	logger        *slog.Logger
 }
 
-func NewBusinessHandler(businessStore store.BusinessStore, logger *slog.Logger) *BusinessHandler {
+func NewBusinessHandler(businessStore store.BusinessStore, notifier push.Notifier, logger *slog.Logger) *BusinessHandler {
 	return &BusinessHandler{
 		businessStore: businessStore,
+		notifier:      notifier,
 		logger:        logger,
 	}
 }
@@ -315,6 +318,7 @@ func (bh *BusinessHandler) HandleAcceptBusinessApplication(w http.ResponseWriter
 		utils.ServerError(w, bh.logger, "accept business application", err)
 		return
 	}
+	bh.notifyOwner(id, "Seller application approved 🎉", "Your business is now live. Add products and start receiving enquiries.", "approved")
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business application accepted successfully"})
 }
 
@@ -359,6 +363,7 @@ func (bh *BusinessHandler) HandleRejectBusinessApplication(w http.ResponseWriter
 		utils.ServerError(w, bh.logger, "reject business application", err)
 		return
 	}
+	bh.notifyOwner(id, "Seller application update", "Your application was not approved. Open the app to see the reason and resubmit.", "rejected")
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "business application rejected successfully"})
 }
 
@@ -716,4 +721,15 @@ func (bh *BusinessHandler) HandleIsBusinessApproved(w http.ResponseWriter, r *ht
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"status": isApproved})
+}
+
+func (bh *BusinessHandler) notifyOwner(businessID, title, body, status string) {
+	if bh.notifier == nil {
+		return
+	}
+	ownerID, err := bh.businessStore.GetBusinessOwnerUserID(businessID)
+	if err != nil {
+		return
+	}
+	bh.notifier.Notify(ownerID, title, body, map[string]string{"type": "application", "status": status, "business_id": businessID})
 }

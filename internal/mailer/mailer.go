@@ -1,72 +1,72 @@
-// Package mailer sends transactional email. Production uses Amazon SES (same AWS
-// credentials as S3); when EMAIL_FROM is not configured a log-only mailer is used so
-// local development never needs SES access.
+// Package mailer sends transactional email through Resend (https://resend.com).
+// Requires RESEND_API_KEY and EMAIL_FROM (e.g. "South Canara Agro Mart <noreply@southcanaraagromart.com>").
+// When either is missing a log-only mailer is used so local development never needs an API key.
 package mailer
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/sesv2"
-	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
 	"github.com/shubhangcs/agromart-server/internal/env"
 )
+
+const resendURL = "https://api.resend.com/emails"
 
 type Mailer interface {
 	Send(ctx context.Context, to, subject, textBody, htmlBody string) error
 }
 
-// New returns an SES mailer when EMAIL_FROM is set, otherwise a logging mailer.
-func New(logger *slog.Logger) (Mailer, error) {
+// New returns a Resend mailer when configured, otherwise a logging mailer.
+func New(logger *slog.Logger) Mailer {
+	apiKey := env.GetString("RESEND_API_KEY", "")
 	from := env.GetString("EMAIL_FROM", "")
-	if from == "" {
-		logger.Warn("EMAIL_FROM not set: emails will be logged, not sent")
-		return &logMailer{logger: logger}, nil
+	if apiKey == "" || from == "" {
+		logger.Warn("RESEND_API_KEY / EMAIL_FROM not set: emails will be logged, not sent")
+		return &logMailer{logger: logger}
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	awsCfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion(env.GetString("REGION", "ap-south-1")),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			env.GetString("ACCESS_KEY", ""), env.GetString("SECRET_KEY", ""), "")),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &sesMailer{client: sesv2.NewFromConfig(awsCfg), from: from, logger: logger}, nil
+	return &resendMailer{apiKey: apiKey, from: from, logger: logger, client: &http.Client{Timeout: 15 * time.Second}}
 }
 
-type sesMailer struct {
-	client *sesv2.Client
+type resendMailer struct {
+	apiKey string
 	from   string
 	logger *slog.Logger
+	client *http.Client
 }
 
-func (m *sesMailer) Send(ctx context.Context, to, subject, textBody, htmlBody string) error {
-	_, err := m.client.SendEmail(ctx, &sesv2.SendEmailInput{
-		FromEmailAddress: aws.String(m.from),
-		Destination:      &types.Destination{ToAddresses: []string{to}},
-		Content: &types.EmailContent{Simple: &types.Message{
-			Subject: &types.Content{Data: aws.String(subject), Charset: aws.String("UTF-8")},
-			Body: &types.Body{
-				Text: &types.Content{Data: aws.String(textBody), Charset: aws.String("UTF-8")},
-				Html: &types.Content{Data: aws.String(htmlBody), Charset: aws.String("UTF-8")},
-			},
-		}},
+func (m *resendMailer) Send(ctx context.Context, to, subject, textBody, htmlBody string) error {
+	body, _ := json.Marshal(map[string]any{
+		"from": m.from, "to": []string{to}, "subject": subject, "text": textBody, "html": htmlBody,
 	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resendURL, bytes.NewReader(body))
 	if err != nil {
-		m.logger.Error("ses send failed", "to", to, "subject", subject, "error", err)
+		return err
 	}
-	return err
+	req.Header.Set("Authorization", "Bearer "+m.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	res, err := m.client.Do(req)
+	if err != nil {
+		m.logger.Error("resend request failed", "to", to, "error", err)
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode >= 300 {
+		b, _ := io.ReadAll(io.LimitReader(res.Body, 2048))
+		m.logger.Error("resend rejected email", "to", to, "status", res.StatusCode, "response", string(b))
+		return fmt.Errorf("resend: status %d", res.StatusCode)
+	}
+	return nil
 }
 
 type logMailer struct{ logger *slog.Logger }
 
 func (m *logMailer) Send(_ context.Context, to, subject, textBody, _ string) error {
-	m.logger.Info("email (not sent: EMAIL_FROM unset)", "to", to, "subject", subject, "body", textBody)
+	m.logger.Info("email (not sent: mailer unconfigured)", "to", to, "subject", subject, "body", textBody)
 	return nil
 }

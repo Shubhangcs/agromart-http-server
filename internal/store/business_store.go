@@ -37,6 +37,7 @@ type BusinessStore interface {
 	UpdateTrustBusinessStatus(id string, status bool) error
 	UpdateBlockBusinessStatus(id string, status bool) error
 	GetBusinessIDByUserID(id string) (*string, error)
+	GetBusinessOwnerUserID(businessID string) (string, error)
 	IsBusinessApproved(id string) (bool, error)
 }
 
@@ -646,3 +647,10 @@ func (bs *PostgresBusinessStore) IsBusinessApproved(id string) (bool, error) {
 	return approved, nil
 }
 
+
+// GetBusinessOwnerUserID returns the user that owns a business (used for notifications).
+func (bs *PostgresBusinessStore) GetBusinessOwnerUserID(businessID string) (string, error) {
+	var userID string
+	err := bs.db.QueryRow(`SELECT user_id FROM businesses WHERE id = $1`, businessID).Scan(&userID)
+	return userID, err
+}
