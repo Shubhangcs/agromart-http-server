@@ -12,6 +12,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/shubhangcs/agromart-server/internal/blob"
 	"github.com/shubhangcs/agromart-server/internal/env"
+	"github.com/shubhangcs/agromart-server/internal/googleauth"
 	"github.com/shubhangcs/agromart-server/internal/handlers"
 	"github.com/shubhangcs/agromart-server/internal/hub"
 	"github.com/shubhangcs/agromart-server/internal/mailer"
@@ -42,6 +43,7 @@ type Application struct {
 	PasswordResetHandler *handlers.PasswordResetHandler
 	PushHandler          *handlers.PushHandler
 	BannerHandler        *handlers.BannerHandler
+	SocialAuthHandler    *handlers.SocialAuthHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -133,6 +135,7 @@ func NewApplication() (*Application, error) {
 	passwordResetHandler := handlers.NewPasswordResetHandler(userStore, resetStore, mail, logger)
 	pushHandler := handlers.NewPushHandler(pushStore, logger)
 	bannerHandler := handlers.NewBannerHandler(bannerStore, as3, logger)
+	socialAuthHandler := handlers.NewSocialAuthHandler(userStore, businessStore, blobStore, as3, googleauth.New(), mail, logger)
 
 	// Creating a object of application struct
 	app := &Application{
@@ -156,6 +159,7 @@ func NewApplication() (*Application, error) {
 		PasswordResetHandler: passwordResetHandler,
 		PushHandler:          pushHandler,
 		BannerHandler:        bannerHandler,
+		SocialAuthHandler:    socialAuthHandler,
 	}
 
 	return app, nil

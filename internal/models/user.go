@@ -59,6 +59,8 @@ type User struct {
 	Password      password  `json:"-"`
 	IsUserBlocked bool      `json:"is_user_blocked"`
 	IsUserSeller  bool      `json:"is_user_seller"`
+	AuthProvider  string    `json:"auth_provider"`
+	GoogleSub     *string   `json:"-"`
 	CreatedAT     time.Time `json:"created_at"`
 	UpdatedAT     time.Time `json:"updated_at"`
 }

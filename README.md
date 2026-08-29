@@ -29,6 +29,8 @@ TEST_DATABASE_NAME=agromart_test TEST_DATABASE_USER=$USER TEST_DATABASE_PASSWORD
 | `ACCESS_KEY`, `SECRET_KEY`, `REGION`, `BUCKET_NAME` | yes | S3 uploads (presigned URLs) |
 | `ADMIN_BOOTSTRAP_SECRET` | first deploy | Enables `POST /admin/bootstrap` while no admin exists |
 | `RESEND_API_KEY`, `EMAIL_FROM` | prod | Transactional email via Resend (welcome, password reset). Unset → emails are logged only |
+| `GOOGLE_OAUTH_CLIENT_IDS` | prod | Comma-separated Google OAuth client IDs accepted as `aud` for `POST /user/auth/google` (Web + Android client IDs) |
+| `GOOGLE_AUTH_TEST_MODE` | tests only | `true` accepts `test:<sub>:<email>:<given>:<family>` as an ID token. Never set in production |
 | `EXPO_ACCESS_TOKEN` | optional | Expo push API auth token |
 | `PUSH_DRY_RUN` | dev | `true` logs pushes instead of sending |
 | `AUTH_RATE_LIMIT_PER_MIN` | optional | Per-IP limit on login / signup / password reset (default 20) |
@@ -40,6 +42,7 @@ TEST_DATABASE_NAME=agromart_test TEST_DATABASE_USER=$USER TEST_DATABASE_PASSWORD
 - `POST /user/login` / `POST /admin/login` return a JWT with `role` (`user` | `admin`) and, for sellers, `business_id`.
 - Admin-only: `/admin/*`, category mutations, seller-application accept/reject, business verify/trust/block, banner management, user listing/blocking.
 - Ownership is enforced server-side: a caller can only mutate their own business, products, RFQs, images and read their own leads. `user_id` on ratings, reviews and follows is always taken from the token.
+- Google sign-in: `POST /user/auth/google { id_token }` → verifies the Google ID token, links by verified email or creates a password-less user (`auth_provider = google`), returns `{ token, user_id, is_new_user, needs_phone }`. Password login/reset/change return an `auth_provider: google` hint for such accounts.
 - First admin: `POST /admin/bootstrap` with header `X-Bootstrap-Secret` — works only while the `admins` table is empty.
 - WebSocket `/chat/ws`: send the token as `Sec-WebSocket-Protocol: bearer, <jwt>` (the `?token=` query form is deprecated).
 

@@ -65,6 +65,7 @@ func usersRoutes(app *app.Application, r chi.Router) {
 	auth.Post("/user/create", app.UserHandler.HandleCreateUser)
 	auth.Post("/admin/login", app.TokenHandler.HandleGetAdminTokenByEmailPassword)
 	auth.Post("/user/login", app.TokenHandler.HandleGetUserTokenByEmailPassword)
+	auth.Post("/user/auth/google", app.SocialAuthHandler.HandleGoogleAuth)
 	auth.Post("/user/forgot-password", app.PasswordResetHandler.HandleForgotPassword)
 	auth.Post("/user/reset-password", app.PasswordResetHandler.HandleResetPassword)
 

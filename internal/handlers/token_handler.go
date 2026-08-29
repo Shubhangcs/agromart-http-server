@@ -127,6 +127,10 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 		return
 	}
 
+	if len(user.Password.Hash) == 0 {
+		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "this account signs in with Google", "auth_provider": "google"})
+		return
+	}
 	matched, err := user.Password.Matches(req.Password)
 	if err != nil {
 		utils.ServerError(w, th.logger, "user login: password comparison", err)
