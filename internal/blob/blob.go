@@ -1,7 +1,9 @@
 package blob
 
 import (
+	"bytes"
 	"context"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -93,4 +95,15 @@ func (cfg *AWSS3) DeleteImage(key string) error {
 	}
 
 	return nil
+}
+
+// UploadObject writes bytes directly to the bucket (server-side upload, e.g. copying a social avatar).
+func (cfg *AWSS3) UploadObject(ctx context.Context, key, contentType string, body []byte) error {
+	_, err := cfg.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(cfg.bucketName),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(body),
+		ContentType: aws.String(contentType),
+	})
+	return err
 }

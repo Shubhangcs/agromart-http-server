@@ -135,7 +135,7 @@ func NewApplication() (*Application, error) {
 	passwordResetHandler := handlers.NewPasswordResetHandler(userStore, resetStore, mail, logger)
 	pushHandler := handlers.NewPushHandler(pushStore, logger)
 	bannerHandler := handlers.NewBannerHandler(bannerStore, as3, logger)
-	socialAuthHandler := handlers.NewSocialAuthHandler(userStore, businessStore, googleauth.New(), mail, logger)
+	socialAuthHandler := handlers.NewSocialAuthHandler(userStore, businessStore, blobStore, as3, googleauth.New(), mail, logger)
 
 	// Creating a object of application struct
 	app := &Application{
