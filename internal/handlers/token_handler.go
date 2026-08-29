@@ -85,7 +85,7 @@ func (th *TokenHandler) HandleGetAdminTokenByEmailPassword(w http.ResponseWriter
 		return
 	}
 
-	token, err := tokens.GenerateNewToken(admin.ID, fullName(admin.FirstName, admin.LastName), nil)
+	token, err := tokens.GenerateNewToken(admin.ID, fullName(admin.FirstName, admin.LastName), tokens.RoleAdmin, nil)
 	if err != nil {
 		utils.ServerError(w, th.logger, "admin login: token generation", err)
 		return
@@ -143,7 +143,7 @@ func (th *TokenHandler) HandleGetUserTokenByEmailPassword(w http.ResponseWriter,
 		return
 	}
 
-	token, err := tokens.GenerateNewToken(user.ID, fullName(user.FirstName, user.LastName), businessID)
+	token, err := tokens.GenerateNewToken(user.ID, fullName(user.FirstName, user.LastName), tokens.RoleUser, businessID)
 	if err != nil {
 		utils.ServerError(w, th.logger, "user login: token generation", err)
 		return

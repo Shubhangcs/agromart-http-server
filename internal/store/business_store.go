@@ -647,7 +647,6 @@ func (bs *PostgresBusinessStore) IsBusinessApproved(id string) (bool, error) {
 	return approved, nil
 }
 
-
 // GetBusinessOwnerUserID returns the user that owns a business (used for notifications).
 func (bs *PostgresBusinessStore) GetBusinessOwnerUserID(businessID string) (string, error) {
 	var userID string

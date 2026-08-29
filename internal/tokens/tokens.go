@@ -18,15 +18,17 @@ var (
 type Token struct {
 	UserID     string  `json:"user_id"`
 	UserName   string  `json:"user_name"`
+	Role       string  `json:"role"` // "admin" or "user"
 	BusinessID *string `json:"business_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
 // GenerateNewToken signs and returns a new JWT for the given user.
-func GenerateNewToken(userID, userName string, businessID *string) (string, error) {
+func GenerateNewToken(userID, userName, role string, businessID *string) (string, error) {
 	claims := Token{
 		UserID:     userID,
 		UserName:   userName,
+		Role:       role,
 		BusinessID: businessID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
@@ -66,3 +68,11 @@ func ValidateToken(tokenString string) (*Token, error) {
 
 	return claims, nil
 }
+
+const (
+	RoleAdmin = "admin"
+	RoleUser  = "user"
+)
+
+// IsAdmin reports whether the token belongs to an admin account.
+func (t *Token) IsAdmin() bool { return t != nil && t.Role == RoleAdmin }

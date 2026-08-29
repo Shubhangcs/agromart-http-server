@@ -36,23 +36,23 @@ type CreateLeadRequest struct {
 // It includes the enquired product details and the complete seller business info.
 // swagger:model
 type LeadSentResponse struct {
-	LeadID                    string    `json:"lead_id"`
-	ProductID                 string    `json:"product_id"`
-	ProductName               string    `json:"product_name"`
-	ProductImage              *string   `json:"product_image"`
-	SellerBusinessID          string    `json:"seller_business_id"`
-	SellerBusinessName        string    `json:"seller_business_name"`
-	SellerBusinessEmail       string    `json:"seller_business_email"`
-	SellerBusinessPhone       string    `json:"seller_business_phone"`
-	SellerBusinessProfileImage *string  `json:"seller_business_profile_image"`
-	SellerAddress             string    `json:"seller_address"`
-	SellerCity                string    `json:"seller_city"`
-	SellerState               string    `json:"seller_state"`
-	SellerPincode             string    `json:"seller_pincode"`
-	EnquiryMessage            string    `json:"enquiry_message"`
-	OrderQuantity             float64   `json:"order_quantity"`
-	ExpectedPrice             float64   `json:"expected_price"`
-	CreatedAT                 time.Time `json:"created_at"`
+	LeadID                     string    `json:"lead_id"`
+	ProductID                  string    `json:"product_id"`
+	ProductName                string    `json:"product_name"`
+	ProductImage               *string   `json:"product_image"`
+	SellerBusinessID           string    `json:"seller_business_id"`
+	SellerBusinessName         string    `json:"seller_business_name"`
+	SellerBusinessEmail        string    `json:"seller_business_email"`
+	SellerBusinessPhone        string    `json:"seller_business_phone"`
+	SellerBusinessProfileImage *string   `json:"seller_business_profile_image"`
+	SellerAddress              string    `json:"seller_address"`
+	SellerCity                 string    `json:"seller_city"`
+	SellerState                string    `json:"seller_state"`
+	SellerPincode              string    `json:"seller_pincode"`
+	EnquiryMessage             string    `json:"enquiry_message"`
+	OrderQuantity              float64   `json:"order_quantity"`
+	ExpectedPrice              float64   `json:"expected_price"`
+	CreatedAT                  time.Time `json:"created_at"`
 }
 
 // LeadReceivedResponse is returned to the business that received the enquiry.

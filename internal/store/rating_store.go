@@ -165,4 +165,3 @@ func (s *PostgresRatingStore) GetRatingsByBusinessID(id string, limit, offset in
 	}
 	return ratings, rows.Err()
 }
-

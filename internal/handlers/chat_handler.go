@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -56,7 +57,12 @@ func claimsFromCtx(r *http.Request) *tokens.Token {
 // @Param        token query string true "JWT access token"
 // @Router       /chat/ws [get]
 func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	rawToken := r.URL.Query().Get("token")
+	// Preferred: Sec-WebSocket-Protocol: bearer, <jwt>  (keeps the token out of URLs / access logs).
+	// Fallback (deprecated): ?token=<jwt> for older app builds.
+	rawToken, viaSubprotocol := tokenFromSubprotocol(r)
+	if rawToken == "" {
+		rawToken = r.URL.Query().Get("token")
+	}
 	if rawToken == "" {
 		utils.WriteJSON(w, http.StatusUnauthorized, utils.Envelope{"error": "missing token"})
 		return
@@ -68,7 +74,11 @@ func (ch *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := claims.UserID
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	var respHeader http.Header
+	if viaSubprotocol {
+		respHeader = http.Header{"Sec-WebSocket-Protocol": []string{"bearer"}}
+	}
+	conn, err := upgrader.Upgrade(w, r, respHeader)
 	if err != nil {
 		ch.logger.Error("ws upgrade", "error", err)
 		return
@@ -318,4 +328,20 @@ func (ch *ChatHandler) notifyOffline(receiverID, senderID, content string) {
 		preview = preview[:90] + "…"
 	}
 	ch.notifier.Notify(receiverID, "New message", preview, map[string]string{"type": "chat", "sender_id": senderID})
+}
+
+// tokenFromSubprotocol extracts a JWT sent as `Sec-WebSocket-Protocol: bearer, <jwt>`.
+func tokenFromSubprotocol(r *http.Request) (string, bool) {
+	for _, h := range r.Header.Values("Sec-WebSocket-Protocol") {
+		parts := strings.Split(h, ",")
+		for i := range parts {
+			parts[i] = strings.TrimSpace(parts[i])
+		}
+		for i, p := range parts {
+			if strings.EqualFold(p, "bearer") && i+1 < len(parts) && parts[i+1] != "" {
+				return parts[i+1], true
+			}
+		}
+	}
+	return "", false
 }

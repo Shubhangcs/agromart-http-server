@@ -30,6 +30,7 @@ type UserStore interface {
 	BlockUser(*models.User) error
 	GetUserDetailsByID(id string) (*models.User, error)
 	GetAdminDetailsByID(id string) (*models.Admin, error)
+	AdminExists() (bool, error)
 }
 
 func (us *PostgresUserStore) CreateAdmin(admin *models.Admin) error {
@@ -313,4 +314,11 @@ func (us *PostgresUserStore) GetAdminDetailsByID(id string) (*models.Admin, erro
 		return nil, err
 	}
 	return &a, nil
+}
+
+// AdminExists reports whether at least one admin account exists (used to gate bootstrap).
+func (us *PostgresUserStore) AdminExists() (bool, error) {
+	var exists bool
+	err := us.db.QueryRow(`SELECT EXISTS (SELECT 1 FROM admins)`).Scan(&exists)
+	return exists, err
 }
