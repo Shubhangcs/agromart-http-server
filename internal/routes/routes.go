@@ -59,6 +59,8 @@ func usersRoutes(app *app.Application, r chi.Router) {
 	r.Post("/user/create", app.UserHandler.HandleCreateUser)
 	r.Post("/admin/login", app.TokenHandler.HandleGetAdminTokenByEmailPassword)
 	r.Post("/user/login", app.TokenHandler.HandleGetUserTokenByEmailPassword)
+	r.Post("/user/forgot-password", app.PasswordResetHandler.HandleForgotPassword)
+	r.Post("/user/reset-password", app.PasswordResetHandler.HandleResetPassword)
 
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
